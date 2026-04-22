@@ -9,6 +9,14 @@ const SHEETS = {
   SPD: 'SPD',
   LOGS: 'AUDIT_LOG'
 };
+const SHEET_HEADERS = {};
+SHEET_HEADERS[SHEETS.USERS] = ['ID','USERNAME','PASSWORD_HASH','NAMA','ROLE','ACTIVE','CREATED_AT','UPDATED_AT'];
+SHEET_HEADERS[SHEETS.SETTINGS] = ['KEY','VALUE'];
+SHEET_HEADERS[SHEETS.EMPLOYEES] = ['ID','NIP','NAMA','JABATAN','PANGKAT_GOL','UNIT_KERJA','ACTIVE','MAX_PER_DAY','TOTAL_PERJALANAN','CREATED_AT','UPDATED_AT'];
+SHEET_HEADERS[SHEETS.COSTS] = ['ID','KATEGORI','SUBKATEGORI','TUJUAN','SATUAN','NILAI','KETERANGAN','ACTIVE','UPDATED_AT'];
+SHEET_HEADERS[SHEETS.ACCOUNTS] = ['ID','KODE_KEGIATAN','NAMA_KEGIATAN','KODE_SUB_KEGIATAN','NAMA_SUB_KEGIATAN','KODE_REKENING','NAMA_REKENING','ACTIVE','UPDATED_AT'];
+SHEET_HEADERS[SHEETS.SPD] = ['ID','NO_SPD','TGL_BERANGKAT','TGL_PULANG','PEGAWAI_ID','NAMA_PEGAWAI','TUJUAN','KEPERLUAN','KEGIATAN','SUB_KEGIATAN','STATUS','CREATED_BY','CREATED_AT','UPDATED_AT'];
+SHEET_HEADERS[SHEETS.LOGS] = ['ID','TIMESTAMP','USERNAME','ACTION','DETAIL','STATUS'];
 const ROLES = {
   GRAND_ADMIN: 'grand_admin',
   ADMIN: 'admin'
@@ -28,13 +36,9 @@ function include(filename) {
 
 function initialSetup() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  ensureSheet_(ss, SHEETS.USERS, ['ID','USERNAME','PASSWORD_HASH','NAMA','ROLE','ACTIVE','CREATED_AT','UPDATED_AT']);
-  ensureSheet_(ss, SHEETS.SETTINGS, ['KEY','VALUE']);
-  ensureSheet_(ss, SHEETS.EMPLOYEES, ['ID','NIP','NAMA','JABATAN','PANGKAT_GOL','UNIT_KERJA','ACTIVE','MAX_PER_DAY','TOTAL_PERJALANAN','CREATED_AT','UPDATED_AT']);
-  ensureSheet_(ss, SHEETS.COSTS, ['ID','KATEGORI','SUBKATEGORI','TUJUAN','SATUAN','NILAI','KETERANGAN','ACTIVE','UPDATED_AT']);
-  ensureSheet_(ss, SHEETS.ACCOUNTS, ['ID','KODE_KEGIATAN','NAMA_KEGIATAN','KODE_SUB_KEGIATAN','NAMA_SUB_KEGIATAN','KODE_REKENING','NAMA_REKENING','ACTIVE','UPDATED_AT']);
-  ensureSheet_(ss, SHEETS.SPD, ['ID','NO_SPD','TGL_BERANGKAT','TGL_PULANG','PEGAWAI_ID','NAMA_PEGAWAI','TUJUAN','KEPERLUAN','KEGIATAN','SUB_KEGIATAN','STATUS','CREATED_BY','CREATED_AT','UPDATED_AT']);
-  ensureSheet_(ss, SHEETS.LOGS, ['ID','TIMESTAMP','USERNAME','ACTION','DETAIL','STATUS']);
+  Object.keys(SHEET_HEADERS).forEach(function(name){
+    ensureSheet_(ss, name, SHEET_HEADERS[name]);
+  });
 
   const settings = getSettingsMap_();
   if (!settings.APP_LOGO_URL) setSetting_('APP_LOGO_URL', '');
@@ -93,13 +97,27 @@ function login(payload) {
   }
 
   const token = Utilities.getUuid();
+  const normalizedRole = normalizeRole_(user.ROLE);
   const session = {
     token: token,
     username: user.USERNAME,
     name: user.NAMA,
-    role: user.ROLE,
+    role: normalizedRole,
     loginAt: new Date().toISOString()
   };
+  if (normalizedRole !== user.ROLE) {
+    const usersSheet = getSheet_(SHEETS.USERS);
+    upsertById_(usersSheet, {
+      ID: user.ID,
+      USERNAME: user.USERNAME,
+      PASSWORD_HASH: user.PASSWORD_HASH,
+      NAMA: user.NAMA,
+      ROLE: normalizedRole,
+      ACTIVE: user.ACTIVE,
+      CREATED_AT: user.CREATED_AT,
+      UPDATED_AT: new Date()
+    }, 'ID');
+  }
   PropertiesService.getScriptProperties().setProperty('SESSION_' + token, JSON.stringify(session));
   logAction_(username, 'LOGIN', 'Berhasil login', 'SUCCESS');
   return { ok: true, message: 'Login berhasil.', session: session };
@@ -132,8 +150,14 @@ function getBootstrapData(token) {
     employees: listEmployees(token).data,
     costs: listCosts(token).data,
     accounts: listAccounts(token).data,
-    spd: listSpd(token).data
+    spd: listSpd(token).data,
+    sheetStructure: getSpreadsheetStructure_(SpreadsheetApp.getActiveSpreadsheet())
   };
+}
+
+function inspectSpreadsheetStructure(token) {
+  requireRole_(token, [ROLES.GRAND_ADMIN, ROLES.ADMIN]);
+  return { ok: true, data: getSpreadsheetStructure_(SpreadsheetApp.getActiveSpreadsheet()) };
 }
 
 function createAdmin(token, payload) {
@@ -159,7 +183,7 @@ function listUsers(token) {
 
 function listUsers_(session) {
   const rows = getObjects_(SHEETS.USERS).map(function(r){
-    return { ID:r.ID, USERNAME:r.USERNAME, NAMA:r.NAMA, ROLE:r.ROLE, ACTIVE:r.ACTIVE };
+    return { ID:r.ID, USERNAME:r.USERNAME, NAMA:r.NAMA, ROLE:normalizeRole_(r.ROLE), ACTIVE:r.ACTIVE };
   });
   return { ok: true, data: rows };
 }
@@ -327,7 +351,9 @@ function getAppConfig_() {
 
 function requireRole_(token, allowedRoles) {
   const session = getSession_(token, true);
-  if (allowedRoles.indexOf(session.role) === -1) throw new Error('Anda tidak memiliki hak akses.');
+  const role = normalizeRole_(session.role);
+  if (allowedRoles.indexOf(role) === -1) throw new Error('Anda tidak memiliki hak akses untuk role: ' + role);
+  session.role = role;
   return session;
 }
 
@@ -351,7 +377,15 @@ function ensureSheet_(ss, name, headers) {
 }
 
 function getSheet_(name) {
-  return SpreadsheetApp.getActiveSpreadsheet().getSheetByName(name);
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sh = ss.getSheetByName(name);
+  if (!sh && SHEET_HEADERS[name]) {
+    sh = ensureSheet_(ss, name, SHEET_HEADERS[name]);
+  }
+  if (!sh) {
+    throw new Error('Sheet "' + name + '" tidak ditemukan.');
+  }
+  return sh;
 }
 
 function getObjects_(sheetName) {
@@ -456,4 +490,27 @@ function refreshEmployeeTripTotal_(pegawaiId) {
       break;
     }
   }
+}
+
+function getSpreadsheetStructure_(ss) {
+  return ss.getSheets().map(function(sh){
+    const lastColumn = sh.getLastColumn();
+    const headers = lastColumn > 0 ? sh.getRange(1, 1, 1, lastColumn).getValues()[0] : [];
+    const cleanedHeaders = headers
+      .map(function(h){ return String(h || '').trim(); })
+      .filter(function(h){ return h !== ''; });
+    return {
+      sheetName: sh.getName(),
+      totalRows: Math.max(sh.getLastRow() - 1, 0),
+      totalColumns: lastColumn,
+      columns: cleanedHeaders
+    };
+  });
+}
+
+function normalizeRole_(role) {
+  const clean = String(role || '').trim().toLowerCase();
+  if (clean === 'grandadmin' || clean === 'super_admin' || clean === 'superadmin') return ROLES.GRAND_ADMIN;
+  if (clean === 'administrator') return ROLES.ADMIN;
+  return clean;
 }
