@@ -9,6 +9,14 @@ const SHEETS = {
   SPD: 'SPD',
   LOGS: 'AUDIT_LOG'
 };
+const SHEET_HEADERS = {};
+SHEET_HEADERS[SHEETS.USERS] = ['ID','USERNAME','PASSWORD_HASH','NAMA','ROLE','ACTIVE','CREATED_AT','UPDATED_AT'];
+SHEET_HEADERS[SHEETS.SETTINGS] = ['KEY','VALUE'];
+SHEET_HEADERS[SHEETS.EMPLOYEES] = ['ID','NIP','NAMA','JABATAN','PANGKAT_GOL','UNIT_KERJA','ACTIVE','MAX_PER_DAY','TOTAL_PERJALANAN','CREATED_AT','UPDATED_AT'];
+SHEET_HEADERS[SHEETS.COSTS] = ['ID','KATEGORI','SUBKATEGORI','TUJUAN','SATUAN','NILAI','KETERANGAN','ACTIVE','UPDATED_AT'];
+SHEET_HEADERS[SHEETS.ACCOUNTS] = ['ID','KODE_KEGIATAN','NAMA_KEGIATAN','KODE_SUB_KEGIATAN','NAMA_SUB_KEGIATAN','KODE_REKENING','NAMA_REKENING','ACTIVE','UPDATED_AT'];
+SHEET_HEADERS[SHEETS.SPD] = ['ID','NO_SPD','TGL_BERANGKAT','TGL_PULANG','PEGAWAI_ID','NAMA_PEGAWAI','TUJUAN','KEPERLUAN','KEGIATAN','SUB_KEGIATAN','STATUS','CREATED_BY','CREATED_AT','UPDATED_AT'];
+SHEET_HEADERS[SHEETS.LOGS] = ['ID','TIMESTAMP','USERNAME','ACTION','DETAIL','STATUS'];
 const ROLES = {
   GRAND_ADMIN: 'grand_admin',
   ADMIN: 'admin'
@@ -28,13 +36,9 @@ function include(filename) {
 
 function initialSetup() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  ensureSheet_(ss, SHEETS.USERS, ['ID','USERNAME','PASSWORD_HASH','NAMA','ROLE','ACTIVE','CREATED_AT','UPDATED_AT']);
-  ensureSheet_(ss, SHEETS.SETTINGS, ['KEY','VALUE']);
-  ensureSheet_(ss, SHEETS.EMPLOYEES, ['ID','NIP','NAMA','JABATAN','PANGKAT_GOL','UNIT_KERJA','ACTIVE','MAX_PER_DAY','TOTAL_PERJALANAN','CREATED_AT','UPDATED_AT']);
-  ensureSheet_(ss, SHEETS.COSTS, ['ID','KATEGORI','SUBKATEGORI','TUJUAN','SATUAN','NILAI','KETERANGAN','ACTIVE','UPDATED_AT']);
-  ensureSheet_(ss, SHEETS.ACCOUNTS, ['ID','KODE_KEGIATAN','NAMA_KEGIATAN','KODE_SUB_KEGIATAN','NAMA_SUB_KEGIATAN','KODE_REKENING','NAMA_REKENING','ACTIVE','UPDATED_AT']);
-  ensureSheet_(ss, SHEETS.SPD, ['ID','NO_SPD','TGL_BERANGKAT','TGL_PULANG','PEGAWAI_ID','NAMA_PEGAWAI','TUJUAN','KEPERLUAN','KEGIATAN','SUB_KEGIATAN','STATUS','CREATED_BY','CREATED_AT','UPDATED_AT']);
-  ensureSheet_(ss, SHEETS.LOGS, ['ID','TIMESTAMP','USERNAME','ACTION','DETAIL','STATUS']);
+  Object.keys(SHEET_HEADERS).forEach(function(name){
+    ensureSheet_(ss, name, SHEET_HEADERS[name]);
+  });
 
   const settings = getSettingsMap_();
   if (!settings.APP_LOGO_URL) setSetting_('APP_LOGO_URL', '');
@@ -357,7 +361,15 @@ function ensureSheet_(ss, name, headers) {
 }
 
 function getSheet_(name) {
-  return SpreadsheetApp.getActiveSpreadsheet().getSheetByName(name);
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sh = ss.getSheetByName(name);
+  if (!sh && SHEET_HEADERS[name]) {
+    sh = ensureSheet_(ss, name, SHEET_HEADERS[name]);
+  }
+  if (!sh) {
+    throw new Error('Sheet "' + name + '" tidak ditemukan.');
+  }
+  return sh;
 }
 
 function getObjects_(sheetName) {
