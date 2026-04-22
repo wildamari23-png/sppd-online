@@ -97,13 +97,27 @@ function login(payload) {
   }
 
   const token = Utilities.getUuid();
+  const normalizedRole = normalizeRole_(user.ROLE);
   const session = {
     token: token,
     username: user.USERNAME,
     name: user.NAMA,
-    role: user.ROLE,
+    role: normalizedRole,
     loginAt: new Date().toISOString()
   };
+  if (normalizedRole !== user.ROLE) {
+    const usersSheet = getSheet_(SHEETS.USERS);
+    upsertById_(usersSheet, {
+      ID: user.ID,
+      USERNAME: user.USERNAME,
+      PASSWORD_HASH: user.PASSWORD_HASH,
+      NAMA: user.NAMA,
+      ROLE: normalizedRole,
+      ACTIVE: user.ACTIVE,
+      CREATED_AT: user.CREATED_AT,
+      UPDATED_AT: new Date()
+    }, 'ID');
+  }
   PropertiesService.getScriptProperties().setProperty('SESSION_' + token, JSON.stringify(session));
   logAction_(username, 'LOGIN', 'Berhasil login', 'SUCCESS');
   return { ok: true, message: 'Login berhasil.', session: session };
@@ -169,7 +183,7 @@ function listUsers(token) {
 
 function listUsers_(session) {
   const rows = getObjects_(SHEETS.USERS).map(function(r){
-    return { ID:r.ID, USERNAME:r.USERNAME, NAMA:r.NAMA, ROLE:r.ROLE, ACTIVE:r.ACTIVE };
+    return { ID:r.ID, USERNAME:r.USERNAME, NAMA:r.NAMA, ROLE:normalizeRole_(r.ROLE), ACTIVE:r.ACTIVE };
   });
   return { ok: true, data: rows };
 }
@@ -337,7 +351,9 @@ function getAppConfig_() {
 
 function requireRole_(token, allowedRoles) {
   const session = getSession_(token, true);
-  if (allowedRoles.indexOf(session.role) === -1) throw new Error('Anda tidak memiliki hak akses.');
+  const role = normalizeRole_(session.role);
+  if (allowedRoles.indexOf(role) === -1) throw new Error('Anda tidak memiliki hak akses untuk role: ' + role);
+  session.role = role;
   return session;
 }
 
@@ -490,4 +506,11 @@ function getSpreadsheetStructure_(ss) {
       columns: cleanedHeaders
     };
   });
+}
+
+function normalizeRole_(role) {
+  const clean = String(role || '').trim().toLowerCase();
+  if (clean === 'grandadmin' || clean === 'super_admin' || clean === 'superadmin') return ROLES.GRAND_ADMIN;
+  if (clean === 'administrator') return ROLES.ADMIN;
+  return clean;
 }
