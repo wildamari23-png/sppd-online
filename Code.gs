@@ -132,8 +132,14 @@ function getBootstrapData(token) {
     employees: listEmployees(token).data,
     costs: listCosts(token).data,
     accounts: listAccounts(token).data,
-    spd: listSpd(token).data
+    spd: listSpd(token).data,
+    sheetStructure: getSpreadsheetStructure_(SpreadsheetApp.getActiveSpreadsheet())
   };
+}
+
+function inspectSpreadsheetStructure(token) {
+  requireRole_(token, [ROLES.GRAND_ADMIN, ROLES.ADMIN]);
+  return { ok: true, data: getSpreadsheetStructure_(SpreadsheetApp.getActiveSpreadsheet()) };
 }
 
 function createAdmin(token, payload) {
@@ -456,4 +462,20 @@ function refreshEmployeeTripTotal_(pegawaiId) {
       break;
     }
   }
+}
+
+function getSpreadsheetStructure_(ss) {
+  return ss.getSheets().map(function(sh){
+    const lastColumn = sh.getLastColumn();
+    const headers = lastColumn > 0 ? sh.getRange(1, 1, 1, lastColumn).getValues()[0] : [];
+    const cleanedHeaders = headers
+      .map(function(h){ return String(h || '').trim(); })
+      .filter(function(h){ return h !== ''; });
+    return {
+      sheetName: sh.getName(),
+      totalRows: Math.max(sh.getLastRow() - 1, 0),
+      totalColumns: lastColumn,
+      columns: cleanedHeaders
+    };
+  });
 }

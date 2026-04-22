@@ -63,6 +63,7 @@
         <button data-menu="biaya" onclick="showSection('biaya', this)">Standar Biaya</button>
         <button data-menu="rekening" onclick="showSection('rekening', this)">Rekening Kegiatan</button>
         <button data-menu="spd" onclick="showSection('spd', this)">SPD</button>
+        <button data-menu="struktur" onclick="showSection('struktur', this)">Struktur Sheet</button>
         <button id="adminMenu" data-menu="admin" onclick="showSection('admin', this)">Manajemen Admin</button>
         <button data-menu="audit" onclick="showSection('audit', this)">Audit Log</button>
         <button data-menu="settings" onclick="showSection('settings', this)">Pengaturan</button>
@@ -133,6 +134,13 @@
         </div>
       </section>
 
+      <section id="struktur" class="section hidden">
+        <div class="panel">
+          <div class="panel-head"><h3>Struktur Google Sheet</h3><button class="btn btn-secondary" onclick="loadSheetStructure()">Muat Ulang Struktur</button></div>
+          <div id="structureTable"></div>
+        </div>
+      </section>
+
       <section id="audit" class="section hidden">
         <div class="panel">
           <div class="panel-head"><h3>Audit Log</h3><button class="btn btn-secondary" onclick="loadAudit()">Muat Ulang Log</button></div>
@@ -181,7 +189,7 @@ window.onload = () => {
 
 function server(fn, ...args){
   return new Promise((resolve,reject)=>{
-    google.script.run.withSuccessHandler(resolve).withFailureHandler(err=>reject(err)).[fn](...args);
+    google.script.run.withSuccessHandler(resolve).withFailureHandler(err=>reject(err))[fn](...args);
   });
 }
 
@@ -245,10 +253,20 @@ async function loadAll(){
     renderAccounts(res.accounts || []);
     renderSpd(res.spd || []);
     renderAdmins(res.admins || []);
+    renderSheetStructure(res.sheetStructure || []);
     fillSettings();
     loadAudit();
   }catch(e){ kick(readErr(e)); }
   hideLoading();
+}
+
+async function loadSheetStructure(){
+  try{
+    const res = await server('inspectSpreadsheetStructure', state.token);
+    if (!res.ok) return kick(res.message);
+    renderSheetStructure(res.data || []);
+    toast('Struktur sheet berhasil diperbarui.','success');
+  }catch(e){ actionError(e); }
 }
 
 async function loadAudit(){
@@ -433,6 +451,14 @@ function renderAccounts(rows){ renderTable('rekeningTable', ['Kode Kegiatan','Na
 function renderSpd(rows){ renderTable('spdTable', ['No SPD','Pegawai','Tgl Berangkat','Tgl Pulang','Tujuan','Status','Aksi'], rows.map(r=>[r.NO_SPD,r.NAMA_PEGAWAI,r.TGL_BERANGKAT,r.TGL_PULANG,r.TUJUAN,badge('yellow',r.STATUS||'Draft'),`<button class="btn btn-outline" onclick='openSpdModal(${JSON.stringify(r)})'>Edit</button>`])); }
 function renderAdmins(rows){ renderTable('adminTable', ['Username','Nama','Role','Status'], rows.map(r=>[r.USERNAME,r.NAMA,badge('blue',r.ROLE),badge(r.ACTIVE==='Y'?'green':'yellow',r.ACTIVE==='Y'?'Aktif':'Nonaktif')])); }
 function renderAudit(rows){ renderTable('auditTable', ['Waktu','Username','Aksi','Detail','Status'], rows.map(r=>[fmtDateTime(r.TIMESTAMP),r.USERNAME,r.ACTION,r.DETAIL,badge(r.STATUS==='SUCCESS'?'green':'yellow',r.STATUS)])); }
+function renderSheetStructure(rows){
+  renderTable('structureTable', ['Sheet','Jumlah Data','Jumlah Kolom','Daftar Kolom'], rows.map(r=>[
+    badge('blue', r.sheetName || '-'),
+    r.totalRows || 0,
+    r.totalColumns || 0,
+    `<div class="muted">${(r.columns || []).map(escapeHtml).join(' • ') || '-'}</div>`
+  ]));
+}
 
 function renderTable(target, headers, rows){
   const html = `<div class="table-wrap"><table class="table"><thead><tr>${headers.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${rows.length?rows.map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join('')}</tr>`).join(''):`<tr><td colspan="${headers.length}" class="muted">Belum ada data.</td></tr>`}</tbody></table></div>`;
