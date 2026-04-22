@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SIM SPPD</title>
+  <style>
+    :root{--primary:#0d6efd;--secondary:#ffc107;--bg:#f5f8ff;--text:#122033;--muted:#6b7a90;--card:#ffffff;--danger:#dc3545;--success:#198754;--shadow:0 18px 45px rgba(13,110,253,.12)}
+    *{box-sizing:border-box} body{margin:0;font-family:Inter,Arial,sans-serif;background:linear-gradient(135deg,#eef5ff,#fff8d6);color:var(--text)}
+    .hidden{display:none!important}.app{min-height:100vh}.login-wrap{display:grid;place-items:center;min-height:100vh;padding:24px}
+    .login-card,.panel{background:rgba(255,255,255,.88);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.65);box-shadow:var(--shadow);border-radius:24px}
+    .login-card{width:100%;max-width:460px;padding:30px;animation:up .7s ease}.brand{display:flex;align-items:center;gap:14px;margin-bottom:18px}.logo{width:58px;height:58px;border-radius:18px;background:linear-gradient(135deg,var(--primary),var(--secondary));display:grid;place-items:center;color:#fff;font-size:24px;font-weight:800;overflow:hidden}.logo img{width:100%;height:100%;object-fit:cover}
+    h1,h2,h3{margin:0 0 10px}.sub{color:var(--muted);font-size:14px;margin-bottom:16px}.field{margin:12px 0}.label{display:block;font-size:13px;font-weight:700;margin-bottom:7px}.input,select,textarea{width:100%;padding:13px 14px;border:1px solid #d7e1f3;border-radius:14px;background:#fff;font-size:14px;outline:none;transition:.2s} .input:focus,select:focus,textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(13,110,253,.12)}
+    .row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.actions{display:flex;gap:10px;flex-wrap:wrap}.btn{border:none;border-radius:14px;padding:12px 16px;font-weight:700;cursor:pointer;transition:.2s;display:inline-flex;align-items:center;gap:8px}.btn:hover{transform:translateY(-1px)}.btn-primary{background:linear-gradient(135deg,var(--primary),#3c8cff);color:#fff}.btn-secondary{background:linear-gradient(135deg,var(--secondary),#ffe27a);color:#222}.btn-dark{background:#16263d;color:#fff}.btn-outline{background:#fff;border:1px solid #d5e1f3}.btn-danger{background:var(--danger);color:#fff}
+    .remember{display:flex;justify-content:space-between;gap:12px;align-items:center;font-size:13px;color:var(--muted)}
+    .main{display:grid;grid-template-columns:280px 1fr;min-height:100vh}.sidebar{padding:18px;background:rgba(10,26,56,.92);color:#fff}.sidebar .brand{margin-bottom:26px}.sidebar .logo{box-shadow:none}.menu button{width:100%;text-align:left;background:transparent;color:#dbe7ff;padding:13px 14px;border:none;border-radius:14px;font-weight:700;margin:6px 0;cursor:pointer}.menu button.active,.menu button:hover{background:rgba(255,255,255,.14);color:#fff}
+    .content{padding:20px}.topbar{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:16px}.welcome{font-size:14px;color:var(--muted)}.panels{display:grid;gap:16px}.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}.stat{padding:18px;border-radius:22px;background:var(--card);box-shadow:var(--shadow);animation:up .5s ease}.stat .n{font-size:30px;font-weight:800}.stat .t{font-size:13px;color:var(--muted)}
+    .panel{padding:18px;animation:up .45s ease}.panel-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px}.table-wrap{overflow:auto;border-radius:18px;border:1px solid #edf2fb}.table{width:100%;border-collapse:collapse;background:#fff}.table th,.table td{padding:12px;border-bottom:1px solid #eef3fb;font-size:13px;text-align:left;vertical-align:top}.table th{background:#f7faff;position:sticky;top:0}
+    .badge{display:inline-block;padding:6px 10px;border-radius:999px;font-size:12px;font-weight:800}.badge.blue{background:#e7f0ff;color:#0d6efd}.badge.yellow{background:#fff5d1;color:#9b6b00}.badge.green{background:#dff5e8;color:#198754}
+    .grid-3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.muted{color:var(--muted)} footer{margin-top:18px;padding:12px 2px;color:var(--muted);font-size:12px;text-align:center}
+    .toast-wrap{position:fixed;top:18px;right:18px;display:grid;gap:10px;z-index:9999}.toast{min-width:290px;max-width:380px;padding:14px 16px;border-radius:18px;color:#fff;box-shadow:0 18px 40px rgba(0,0,0,.18);animation:slide .35s ease}.toast.success{background:linear-gradient(135deg,#198754,#34c47d)}.toast.error{background:linear-gradient(135deg,#dc3545,#f06a78)}.toast.info{background:linear-gradient(135deg,#0d6efd,#49a0ff)}
+    .modal{position:fixed;inset:0;background:rgba(9,20,40,.4);display:none;align-items:center;justify-content:center;padding:18px;z-index:999}.modal.show{display:flex}.modal-card{width:min(760px,100%);max-height:92vh;overflow:auto;padding:20px;border-radius:26px;background:#fff;box-shadow:var(--shadow);animation:up .25s ease}
+    .loader{width:18px;height:18px;border:3px solid rgba(255,255,255,.5);border-top-color:#fff;border-radius:50%;display:inline-block;animation:spin 1s linear infinite}
+    @keyframes up{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}} @keyframes slide{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:translateX(0)}} @keyframes spin{to{transform:rotate(360deg)}}
+    @media(max-width:980px){.main{grid-template-columns:1fr}.sidebar{display:none}.stats,.row,.grid-3{grid-template-columns:1fr}.content{padding:14px}}
+  </style>
+</head>
+<body>
+<div class="app">
+  <div id="loginView" class="login-wrap">
+    <div class="login-card">
+      <div class="brand">
+        <div class="logo" id="loginLogo">SP</div>
+        <div>
+          <h2>SIM SPPD</h2>
+          <div class="sub">UPTD Puskesmas Tanjung Puri Kabupaten Sintang</div>
+        </div>
+      </div>
+      <div class="field"><label class="label">Username</label><input id="username" class="input" autocomplete="username"></div>
+      <div class="field"><label class="label">Password</label><div style="display:flex;gap:10px"><input id="password" class="input" type="password" autocomplete="current-password"><button class="btn btn-outline" onclick="togglePassword()">Lihat</button></div></div>
+      <div class="remember">
+        <label><input type="checkbox" id="rememberUser"> Ingat saya untuk username</label>
+        <span class="muted">Role: grand admin / admin</span>
+      </div>
+      <div class="actions" style="margin-top:16px"><button class="btn btn-primary" id="loginBtn" onclick="handleLogin()">Masuk</button><button class="btn btn-outline" onclick="runSetup()">Setup Awal</button></div>
+      <div class="sub" style="margin-top:14px">Login awal: <b>grandadmin</b> / <b>123456</b></div>
+    </div>
+  </div>
+
+  <div id="mainView" class="main hidden">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="logo" id="sideLogo">SP</div>
+        <div>
+          <div style="font-size:18px;font-weight:800">SIM SPPD</div>
+          <div style="font-size:12px;color:#b8c8eb">Modern Web Apps Script</div>
+        </div>
+      </div>
+      <div class="menu">
+        <button class="active" data-menu="dashboard" onclick="showSection('dashboard', this)">Dashboard</button>
+        <button data-menu="pegawai" onclick="showSection('pegawai', this)">Database Pegawai</button>
+        <button data-menu="biaya" onclick="showSection('biaya', this)">Standar Biaya</button>
+        <button data-menu="rekening" onclick="showSection('rekening', this)">Rekening Kegiatan</button>
+        <button data-menu="spd" onclick="showSection('spd', this)">SPD</button>
+        <button id="adminMenu" data-menu="admin" onclick="showSection('admin', this)">Manajemen Admin</button>
+        <button data-menu="audit" onclick="showSection('audit', this)">Audit Log</button>
+        <button data-menu="settings" onclick="showSection('settings', this)">Pengaturan</button>
+      </div>
+    </aside>
+
+    <main class="content">
+      <div class="topbar">
+        <div>
+          <h2 id="pageTitle">Dashboard</h2>
+          <div class="welcome">Selamat datang, <b id="whoName"></b> · Role: <b id="whoRole"></b></div>
+        </div>
+        <div class="actions">
+          <button class="btn btn-secondary" onclick="loadAll()">Refresh</button>
+          <button class="btn btn-dark" onclick="handleLogout()">Logout</button>
+        </div>
+      </div>
+
+      <section id="dashboard" class="panels section">
+        <div class="stats">
+          <div class="stat"><div class="n" id="statPegawai">0</div><div class="t">Total Pegawai</div></div>
+          <div class="stat"><div class="n" id="statBiaya">0</div><div class="t">Standar Biaya</div></div>
+          <div class="stat"><div class="n" id="statRekening">0</div><div class="t">Rekening Kegiatan</div></div>
+          <div class="stat"><div class="n" id="statSpd">0</div><div class="t">Total SPD</div></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h3>Ringkasan Sistem</h3><span class="badge blue">Aman • Modern • Otomatis</span></div>
+          <div class="grid-3">
+            <div><b>Kontrol login per aksi</b><div class="muted">Setiap simpan data memeriksa sesi login di backend.</div></div>
+            <div><b>Notifikasi modern</b><div class="muted">Semua hasil aksi muncul sebagai toast interaktif.</div></div>
+            <div><b>Siap dikembangkan</b><div class="muted">Mudah ditambah PDF, nomor surat, dan approval.</div></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="pegawai" class="section hidden">
+        <div class="panel">
+          <div class="panel-head"><h3>Database Pegawai</h3><button class="btn btn-primary" onclick="openEmployeeModal()">Tambah Pegawai</button></div>
+          <div id="pegawaiTable"></div>
+        </div>
+      </section>
+
+      <section id="biaya" class="section hidden">
+        <div class="panel">
+          <div class="panel-head"><h3>Standar Biaya</h3><button class="btn btn-primary" onclick="openCostModal()">Tambah Biaya</button></div>
+          <div id="biayaTable"></div>
+        </div>
+      </section>
+
+      <section id="rekening" class="section hidden">
+        <div class="panel">
+          <div class="panel-head"><h3>Rekening Kegiatan</h3><button class="btn btn-primary" onclick="openAccountModal()">Tambah Rekening</button></div>
+          <div id="rekeningTable"></div>
+        </div>
+      </section>
+
+      <section id="spd" class="section hidden">
+        <div class="panel">
+          <div class="panel-head"><h3>Transaksi SPD</h3><button class="btn btn-primary" onclick="openSpdModal()">Buat SPD</button></div>
+          <div id="spdTable"></div>
+        </div>
+      </section>
+
+      <section id="admin" class="section hidden">
+        <div class="panel">
+          <div class="panel-head"><h3>Manajemen Admin</h3><button class="btn btn-primary" onclick="openAdminModal()">Tambah Admin</button></div>
+          <div id="adminTable"></div>
+        </div>
+      </section>
+
+      <section id="audit" class="section hidden">
+        <div class="panel">
+          <div class="panel-head"><h3>Audit Log</h3><button class="btn btn-secondary" onclick="loadAudit()">Muat Ulang Log</button></div>
+          <div id="auditTable"></div>
+        </div>
+      </section>
+
+      <section id="settings" class="section hidden">
+        <div class="panel">
+          <div class="panel-head"><h3>Pengaturan Aplikasi</h3><span class="badge yellow">Warna & Logo</span></div>
+          <div class="row">
+            <div class="field"><label class="label">URL Logo</label><input id="logoUrl" class="input" placeholder="https://..."></div>
+            <div class="field"><label class="label">Warna Primer</label><input id="primaryColor" class="input" type="color" value="#0d6efd"></div>
+          </div>
+          <div class="row">
+            <div class="field"><label class="label">Warna Sekunder</label><input id="secondaryColor" class="input" type="color" value="#ffc107"></div>
+            <div class="field"><label class="label">Preview</label><div class="panel" style="padding:14px"><span class="badge blue">Header & Footer Profesional</span><div class="muted" style="margin-top:8px">Perubahan warna diterapkan langsung ke UI.</div></div></div>
+          </div>
+          <div class="actions"><button class="btn btn-primary" onclick="saveSettings()">Simpan Pengaturan</button></div>
+        </div>
+      </section>
+      <footer>SIM SPPD · UPTD Puskesmas Tanjung Puri Kabupaten Sintang</footer>
+    </main>
+  </div>
+</div>
+
+<div id="modal" class="modal"><div class="modal-card" id="modalBody"></div></div>
+<div id="toasts" class="toast-wrap"></div>
+
+<script>
+const state = { token:'', session:null, app:null, bootstrap:null };
+
+window.onload = () => {
+  const remembered = localStorage.getItem('remember_username') || '';
+  if (remembered) { document.getElementById('username').value = remembered; document.getElementById('rememberUser').checked = true; }
+  const token = sessionStorage.getItem('sppd_token') || '';
+  if (token) {
+    state.token = token;
+    server('checkSession', token).then(res => {
+      if (res.ok) {
+        state.session = res.session; state.app = res.app; enterApp(); loadAll();
+      } else sessionStorage.removeItem('sppd_token');
+    }).catch(()=>sessionStorage.removeItem('sppd_token'));
+  }
+};
+
+function server(fn, ...args){
+  return new Promise((resolve,reject)=>{
+    google.script.run.withSuccessHandler(resolve).withFailureHandler(err=>reject(err)).[fn](...args);
+  });
+}
+
+function togglePassword(){
+  const el = document.getElementById('password');
+  el.type = el.type === 'password' ? 'text' : 'password';
+}
+
+async function runSetup(){
+  showLoading('Menyiapkan sheet awal...');
+  try{
+    const res = await server('initialSetup');
+    toast(res.message || 'Setup selesai','success');
+  }catch(e){ toast(readErr(e),'error'); }
+  hideLoading();
+}
+
+async function handleLogin(){
+  const username = val('username');
+  const password = val('password');
+  if (!username || !password) return toast('Username dan password wajib diisi.','error');
+  setBtnLoading('loginBtn', true, 'Masuk');
+  try{
+    const res = await server('login', { username, password });
+    if (!res.ok) return toast(res.message,'error');
+    if (document.getElementById('rememberUser').checked) localStorage.setItem('remember_username', username); else localStorage.removeItem('remember_username');
+    state.token = res.session.token; state.session = res.session;
+    sessionStorage.setItem('sppd_token', state.token);
+    enterApp(); toast('Login berhasil.','success');
+    await loadAll();
+  }catch(e){ toast(readErr(e),'error'); }
+  setBtnLoading('loginBtn', false, 'Masuk');
+}
+
+async function handleLogout(){
+  try{ await server('logout', state.token); }catch(e){}
+  sessionStorage.removeItem('sppd_token');
+  state.token=''; state.session=null;
+  document.getElementById('mainView').classList.add('hidden');
+  document.getElementById('loginView').classList.remove('hidden');
+  toast('Anda telah logout.','info');
+}
+
+function enterApp(){
+  document.getElementById('loginView').classList.add('hidden');
+  document.getElementById('mainView').classList.remove('hidden');
+  document.getElementById('whoName').textContent = state.session.name;
+  document.getElementById('whoRole').textContent = state.session.role;
+  document.getElementById('adminMenu').style.display = state.session.role === 'grand_admin' ? 'block' : 'none';
+}
+
+async function loadAll(){
+  showLoading('Memuat data aplikasi...');
+  try{
+    const res = await server('getBootstrapData', state.token);
+    if (!res.ok) return kick(res.message);
+    state.bootstrap = res; state.app = res.app;
+    applyTheme(); fillStats(res.stats);
+    renderEmployees(res.employees || []);
+    renderCosts(res.costs || []);
+    renderAccounts(res.accounts || []);
+    renderSpd(res.spd || []);
+    renderAdmins(res.admins || []);
+    fillSettings();
+    loadAudit();
+  }catch(e){ kick(readErr(e)); }
+  hideLoading();
+}
+
+async function loadAudit(){
+  try{
+    const res = await server('getAuditLogs', state.token);
+    if (!res.ok) return kick(res.message);
+    renderAudit(res.data || []);
+  }catch(e){ toast(readErr(e),'error'); }
+}
+
+function fillStats(s){
+  setText('statPegawai', s.totalPegawai||0); setText('statBiaya', s.totalBiaya||0); setText('statRekening', s.totalRekening||0); setText('statSpd', s.totalSpd||0);
+}
+function fillSettings(){
+  if (!state.app) return;
+  document.getElementById('logoUrl').value = state.app.logoUrl || '';
+  document.getElementById('primaryColor').value = state.app.primaryColor || '#0d6efd';
+  document.getElementById('secondaryColor').value = state.app.secondaryColor || '#ffc107';
+}
+function applyTheme(){
+  const a = state.app || {};
+  document.documentElement.style.setProperty('--primary', a.primaryColor || '#0d6efd');
+  document.documentElement.style.setProperty('--secondary', a.secondaryColor || '#ffc107');
+  setLogo('loginLogo', a.logoUrl); setLogo('sideLogo', a.logoUrl);
+}
+function setLogo(id, url){
+  const box = document.getElementById(id); if (!box) return;
+  box.innerHTML = url ? `<img src="${escapeHtml(url)}" alt="logo">` : 'SP';
+}
+
+function showSection(id, btn){
+  document.querySelectorAll('.section').forEach(x=>x.classList.add('hidden'));
+  document.getElementById(id).classList.remove('hidden');
+  document.querySelectorAll('.menu button').forEach(b=>b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  setText('pageTitle', btn ? btn.textContent : 'Dashboard');
+}
+
+function openModal(html){ document.getElementById('modalBody').innerHTML = html; document.getElementById('modal').classList.add('show'); }
+function closeModal(){ document.getElementById('modal').classList.remove('show'); document.getElementById('modalBody').innerHTML=''; }
+
+function openEmployeeModal(data={}){
+  openModal(`
+    <div class="panel-head"><h3>${data.ID?'Edit':'Tambah'} Pegawai</h3><button class="btn btn-outline" onclick="closeModal()">Tutup</button></div>
+    <div class="row">
+      <div class="field"><label class="label">NIP</label><input id="m_nip" class="input" value="${esc(data.NIP)}"></div>
+      <div class="field"><label class="label">Nama</label><input id="m_nama" class="input" value="${esc(data.NAMA)}"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label class="label">Jabatan</label><input id="m_jabatan" class="input" value="${esc(data.JABATAN)}"></div>
+      <div class="field"><label class="label">Pangkat/Gol</label><input id="m_pangkat" class="input" value="${esc(data.PANGKAT_GOL)}"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label class="label">Unit Kerja</label><input id="m_unit" class="input" value="${esc(data.UNIT_KERJA)}"></div>
+      <div class="field"><label class="label">Maks perjalanan per hari</label><input id="m_max" class="input" type="number" min="1" value="${esc(data.MAX_PER_DAY||1)}"></div>
+    </div>
+    <div class="actions"><button class="btn btn-primary" onclick='saveEmployee(${JSON.stringify(data.ID||'')})'>Simpan</button></div>
+  `);
+}
+async function saveEmployee(id){
+  try{
+    const res = await server('saveEmployee', state.token, { id, nip:val('m_nip'), nama:val('m_nama'), jabatan:val('m_jabatan'), pangkat:val('m_pangkat'), unitKerja:val('m_unit'), maxPerDay:val('m_max') });
+    if (!res.ok) return toast(res.message,'error');
+    toast(res.message,'success'); closeModal(); loadAll();
+  }catch(e){ actionError(e); }
+}
+
+function openCostModal(data={}){
+  openModal(`
+    <div class="panel-head"><h3>${data.ID?'Edit':'Tambah'} Standar Biaya</h3><button class="btn btn-outline" onclick="closeModal()">Tutup</button></div>
+    <div class="row">
+      <div class="field"><label class="label">Kategori</label><input id="c_kategori" class="input" value="${esc(data.KATEGORI)}"></div>
+      <div class="field"><label class="label">Subkategori</label><input id="c_subkategori" class="input" value="${esc(data.SUBKATEGORI)}"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label class="label">Tujuan</label><input id="c_tujuan" class="input" value="${esc(data.TUJUAN)}"></div>
+      <div class="field"><label class="label">Satuan</label><input id="c_satuan" class="input" value="${esc(data.SATUAN)}"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label class="label">Nilai</label><input id="c_nilai" class="input" type="number" value="${esc(data.NILAI||0)}"></div>
+      <div class="field"><label class="label">Keterangan</label><input id="c_keterangan" class="input" value="${esc(data.KETERANGAN)}"></div>
+    </div>
+    <div class="actions"><button class="btn btn-primary" onclick='saveCost(${JSON.stringify(data.ID||'')})'>Simpan</button></div>
+  `);
+}
+async function saveCost(id){
+  try{
+    const res = await server('saveCost', state.token, { id, kategori:val('c_kategori'), subkategori:val('c_subkategori'), tujuan:val('c_tujuan'), satuan:val('c_satuan'), nilai:val('c_nilai'), keterangan:val('c_keterangan') });
+    if (!res.ok) return toast(res.message,'error');
+    toast(res.message,'success'); closeModal(); loadAll();
+  }catch(e){ actionError(e); }
+}
+
+function openAccountModal(data={}){
+  openModal(`
+    <div class="panel-head"><h3>${data.ID?'Edit':'Tambah'} Rekening Kegiatan</h3><button class="btn btn-outline" onclick="closeModal()">Tutup</button></div>
+    <div class="row">
+      <div class="field"><label class="label">Kode Kegiatan</label><input id="a_kegiatan" class="input" value="${esc(data.KODE_KEGIATAN)}"></div>
+      <div class="field"><label class="label">Nama Kegiatan</label><input id="a_nama_kegiatan" class="input" value="${esc(data.NAMA_KEGIATAN)}"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label class="label">Kode Sub Kegiatan</label><input id="a_subkode" class="input" value="${esc(data.KODE_SUB_KEGIATAN)}"></div>
+      <div class="field"><label class="label">Nama Sub Kegiatan</label><input id="a_subnama" class="input" value="${esc(data.NAMA_SUB_KEGIATAN)}"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label class="label">Kode Rekening</label><input id="a_rekening" class="input" value="${esc(data.KODE_REKENING)}"></div>
+      <div class="field"><label class="label">Nama Rekening</label><input id="a_nama_rekening" class="input" value="${esc(data.NAMA_REKENING)}"></div>
+    </div>
+    <div class="actions"><button class="btn btn-primary" onclick='saveAccount(${JSON.stringify(data.ID||'')})'>Simpan</button></div>
+  `);
+}
+async function saveAccount(id){
+  try{
+    const res = await server('saveAccount', state.token, { id, kodeKegiatan:val('a_kegiatan'), namaKegiatan:val('a_nama_kegiatan'), kodeSubKegiatan:val('a_subkode'), namaSubKegiatan:val('a_subnama'), kodeRekening:val('a_rekening'), namaRekening:val('a_nama_rekening') });
+    if (!res.ok) return toast(res.message,'error');
+    toast(res.message,'success'); closeModal(); loadAll();
+  }catch(e){ actionError(e); }
+}
+
+function openSpdModal(data={}){
+  const pegawaiOptions = (state.bootstrap?.employees || []).map(x=>`<option value="${esc(x.ID)}" ${x.ID===data.PEGAWAI_ID?'selected':''}>${esc(x.NAMA)} (${esc(x.NIP)})</option>`).join('');
+  const akun = state.bootstrap?.accounts || [];
+  const kegiatan = [...new Set(akun.map(x=>x.NAMA_KEGIATAN).filter(Boolean))].map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join('');
+  const sub = [...new Set(akun.map(x=>x.NAMA_SUB_KEGIATAN).filter(Boolean))].map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join('');
+  openModal(`
+    <div class="panel-head"><h3>${data.ID?'Edit':'Buat'} SPD</h3><button class="btn btn-outline" onclick="closeModal()">Tutup</button></div>
+    <div class="row">
+      <div class="field"><label class="label">Pegawai</label><select id="s_pegawai"><option value="">Pilih pegawai</option>${pegawaiOptions}</select></div>
+      <div class="field"><label class="label">Tujuan</label><input id="s_tujuan" class="input" value="${esc(data.TUJUAN)}"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label class="label">Tanggal Berangkat</label><input id="s_berangkat" class="input" type="date" value="${esc(data.TGL_BERANGKAT)}"></div>
+      <div class="field"><label class="label">Tanggal Pulang</label><input id="s_pulang" class="input" type="date" value="${esc(data.TGL_PULANG)}"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label class="label">Kegiatan</label><input list="kegiatanList" id="s_kegiatan" class="input" value="${esc(data.KEGIATAN)}"><datalist id="kegiatanList">${kegiatan}</datalist></div>
+      <div class="field"><label class="label">Sub Kegiatan</label><input list="subList" id="s_sub" class="input" value="${esc(data.SUB_KEGIATAN)}"><datalist id="subList">${sub}</datalist></div>
+    </div>
+    <div class="field"><label class="label">Keperluan</label><textarea id="s_keperluan" class="input">${esc(data.KEPERLUAN)}</textarea></div>
+    <div class="actions"><button class="btn btn-primary" onclick='saveSpd(${JSON.stringify(data.ID||'')})'>Simpan SPD</button></div>
+  `);
+}
+async function saveSpd(id){
+  try{
+    const res = await server('saveSpd', state.token, { id, pegawaiId:val('s_pegawai'), tujuan:val('s_tujuan'), tglBerangkat:val('s_berangkat'), tglPulang:val('s_pulang'), kegiatan:val('s_kegiatan'), subKegiatan:val('s_sub'), keperluan:val('s_keperluan') });
+    if (!res.ok) return toast(res.message,'error');
+    toast(`${res.message} No SPD: ${res.noSpd||'-'}`,'success'); closeModal(); loadAll();
+  }catch(e){ actionError(e); }
+}
+
+function openAdminModal(){
+  if (state.session?.role !== 'grand_admin') return toast('Hanya grand admin yang bisa menambah admin.','error');
+  openModal(`
+    <div class="panel-head"><h3>Tambah Admin Baru</h3><button class="btn btn-outline" onclick="closeModal()">Tutup</button></div>
+    <div class="field"><label class="label">Nama</label><input id="u_name" class="input"></div>
+    <div class="row">
+      <div class="field"><label class="label">Username</label><input id="u_username" class="input"></div>
+      <div class="field"><label class="label">Password</label><input id="u_password" class="input" type="password"></div>
+    </div>
+    <div class="actions"><button class="btn btn-primary" onclick="saveAdmin()">Simpan Admin</button></div>
+  `);
+}
+async function saveAdmin(){
+  try{
+    const res = await server('createAdmin', state.token, { name:val('u_name'), username:val('u_username'), password:val('u_password') });
+    if (!res.ok) return toast(res.message,'error');
+    toast(res.message,'success'); closeModal(); loadAll();
+  }catch(e){ actionError(e); }
+}
+
+async function saveSettings(){
+  try{
+    const res = await server('updateAppSettings', state.token, { logoUrl:val('logoUrl'), primaryColor:val('primaryColor'), secondaryColor:val('secondaryColor') });
+    if (!res.ok) return toast(res.message,'error');
+    state.app = res.app; applyTheme(); toast(res.message,'success');
+  }catch(e){ actionError(e); }
+}
+
+function renderEmployees(rows){ renderTable('pegawaiTable', ['NIP','Nama','Jabatan','Unit Kerja','Maks/Hari','Total PD','Aksi'], rows.map(r=>[r.NIP,r.NAMA,r.JABATAN,r.UNIT_KERJA,badge('blue',r.MAX_PER_DAY||1),badge('green',r.TOTAL_PERJALANAN||0),`<button class="btn btn-outline" onclick='openEmployeeModal(${JSON.stringify(r)})'>Edit</button>`])); }
+function renderCosts(rows){ renderTable('biayaTable', ['Kategori','Subkategori','Tujuan','Satuan','Nilai','Aksi'], rows.map(r=>[r.KATEGORI,r.SUBKATEGORI,r.TUJUAN,r.SATUAN,formatRupiah(r.NILAI),`<button class="btn btn-outline" onclick='openCostModal(${JSON.stringify(r)})'>Edit</button>`])); }
+function renderAccounts(rows){ renderTable('rekeningTable', ['Kode Kegiatan','Nama Kegiatan','Kode Rekening','Nama Rekening','Aksi'], rows.map(r=>[r.KODE_KEGIATAN,r.NAMA_KEGIATAN,r.KODE_REKENING,r.NAMA_REKENING,`<button class="btn btn-outline" onclick='openAccountModal(${JSON.stringify(r)})'>Edit</button>`])); }
+function renderSpd(rows){ renderTable('spdTable', ['No SPD','Pegawai','Tgl Berangkat','Tgl Pulang','Tujuan','Status','Aksi'], rows.map(r=>[r.NO_SPD,r.NAMA_PEGAWAI,r.TGL_BERANGKAT,r.TGL_PULANG,r.TUJUAN,badge('yellow',r.STATUS||'Draft'),`<button class="btn btn-outline" onclick='openSpdModal(${JSON.stringify(r)})'>Edit</button>`])); }
+function renderAdmins(rows){ renderTable('adminTable', ['Username','Nama','Role','Status'], rows.map(r=>[r.USERNAME,r.NAMA,badge('blue',r.ROLE),badge(r.ACTIVE==='Y'?'green':'yellow',r.ACTIVE==='Y'?'Aktif':'Nonaktif')])); }
+function renderAudit(rows){ renderTable('auditTable', ['Waktu','Username','Aksi','Detail','Status'], rows.map(r=>[fmtDateTime(r.TIMESTAMP),r.USERNAME,r.ACTION,r.DETAIL,badge(r.STATUS==='SUCCESS'?'green':'yellow',r.STATUS)])); }
+
+function renderTable(target, headers, rows){
+  const html = `<div class="table-wrap"><table class="table"><thead><tr>${headers.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${rows.length?rows.map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join('')}</tr>`).join(''):`<tr><td colspan="${headers.length}" class="muted">Belum ada data.</td></tr>`}</tbody></table></div>`;
+  document.getElementById(target).innerHTML = html;
+}
+
+function toast(msg, type='info'){
+  const el = document.createElement('div'); el.className = `toast ${type}`; el.innerHTML = `<div style="font-weight:800;margin-bottom:4px">${type==='success'?'Berhasil':type==='error'?'Gagal':'Informasi'}</div><div>${escapeHtml(msg)}</div>`;
+  document.getElementById('toasts').appendChild(el); setTimeout(()=>el.remove(), 3600);
+}
+function showLoading(msg){ const m=document.getElementById('toasts'); const el=document.createElement('div'); el.id='loadingToast'; el.className='toast info'; el.innerHTML=`<div style="display:flex;align-items:center;gap:10px"><span class="loader"></span><div>${escapeHtml(msg||'Memproses...')}</div></div>`; const old=document.getElementById('loadingToast'); if(old) old.remove(); m.appendChild(el); }
+function hideLoading(){ const old=document.getElementById('loadingToast'); if(old) old.remove(); }
+function setBtnLoading(id, isLoading, txt){ const b=document.getElementById(id); if(!b) return; b.disabled=isLoading; b.innerHTML=isLoading?`<span class="loader"></span>`:txt; }
+function readErr(e){ return (e && e.message) ? e.message : String(e || 'Terjadi kesalahan.'); }
+function actionError(e){ const msg=readErr(e); if(msg.toLowerCase().includes('sesi')) return kick(msg); toast(msg,'error'); }
+function kick(msg){ toast(msg || 'Sesi berakhir. Silakan login kembali.','error'); handleLogout(); }
+function val(id){ return (document.getElementById(id)?.value || '').trim(); }
+function setText(id, txt){ const el=document.getElementById(id); if(el) el.textContent=txt; }
+function esc(v){ return String(v||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function escapeHtml(v){ return esc(v); }
+function badge(type, text){ return `<span class="badge ${type}">${escapeHtml(String(text))}</span>`; }
+function formatRupiah(n){ const x = Number(n||0); return new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(x); }
+function fmtDateTime(v){ if(!v) return ''; try{ return new Date(v).toLocaleString('id-ID'); }catch(e){ return v; } }
+</script>
+</body>
+</html>
