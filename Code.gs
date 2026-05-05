@@ -36,6 +36,46 @@ function initSheets() {
     sheetKwitansi = ss.insertSheet("Data_Kwitansi");
     sheetKwitansi.appendRow(["Waktu_Dibuat", "ID_SPPD", "Transport", "Penginapan", "Uang_Harian", "Total"]);
   }
+
+  let sheetRef = ss.getSheetByName("Data_Referensi");
+  if (!sheetRef) {
+    sheetRef = ss.insertSheet("Data_Referensi");
+    sheetRef.appendRow(["Jenis", "Nilai", "Waktu_Dibuat"]);
+  }
+  seedDefaultReferensi_(sheetRef);
+
+  let sheetAnggaran = ss.getSheetByName("Data_Anggaran");
+  if (!sheetAnggaran) {
+    sheetAnggaran = ss.insertSheet("Data_Anggaran");
+    sheetAnggaran.appendRow(["Kegiatan", "Sub_Kegiatan", "Rekening_Kegiatan", "Objek_Belanja", "No_Rek_Belanja", "Berangkat_Dari", "Waktu_Dibuat"]);
+  }
+  seedDefaultAnggaran_(sheetAnggaran);
+}
+
+function seedDefaultReferensi_(sheetRef) {
+  const data = sheetRef.getDataRange().getValues();
+  const existing = new Set(data.slice(1).map(r => `${r[0]}::${r[1]}`));
+  const defaults = [
+    ["KEGIATAN", "1.02.05.2.03.01 / Bimbingan Teknis Dan Supervisi Pengembangan Dan Pelaksanaan UKBM"],
+    ["SUB_KEGIATAN", "BOK - Pelayanan Kesehatan Dasar"],
+    ["REKENING", "1.02.02.2.02.15.0007"],
+    ["TEMPAT_TUJUAN", "Desa Sungai Ana"],
+    ["TEMPAT_TUJUAN", "Desa Baning Kota"],
+    ["TEMPAT_TUJUAN", "Desa Tanjung Puri"],
+    ["TEMPAT_TUJUAN", "Desa Kapuas Kanan Hulu"],
+  ];
+  const rows = defaults.filter(d => !existing.has(`${d[0]}::${d[1]}`)).map(d => [d[0], d[1], new Date()]);
+  if (rows.length) sheetRef.getRange(sheetRef.getLastRow() + 1, 1, rows.length, 3).setValues(rows);
+}
+
+function seedDefaultAnggaran_(sheetAnggaran) {
+  const data = sheetAnggaran.getDataRange().getValues();
+  const existing = new Set(data.slice(1).map(r => `${r[0]}::${r[1]}::${r[2]}::${r[3]}::${r[4]}`));
+  const defaults = [
+    ["1.02.05.2.03.01 / Bimbingan Teknis Dan Supervisi Pengembangan Dan Pelaksanaan UKBM", "BOK - Pelayanan Kesehatan Dasar", "1.02.02.2.02.15.0007", "Belanja Perjalanan Dinas Dalam Kota", "5.1.02.04.01.0003", "Sintang"]
+  ];
+  const rows = defaults.filter(d => !existing.has(`${d[0]}::${d[1]}::${d[2]}::${d[3]}::${d[4]}`)).map(d => [...d, new Date()]);
+  if (rows.length) sheetAnggaran.getRange(sheetAnggaran.getLastRow()+1,1,rows.length,7).setValues(rows);
 }
 
 // 3. Fungsi Ambil Data Awal (Pegawai & Riwayat SPPD) saat Login
@@ -85,9 +125,57 @@ function getInitData() {
       });
     }
     
-    return JSON.stringify({status: 'success', pegawai: pegawaiList, sppd: sppdList});
+    return JSON.stringify({status: 'success', pegawai: pegawaiList, sppd: sppdList, referensi: getReferensiMap_(), anggaran: getAnggaranMap_()});
   } catch (e) {
     return JSON.stringify({status: 'error', message: e.toString()});
+  }
+}
+
+function getReferensiMap_() {
+  const ss = SpreadsheetApp.openByUrl(SPREADSHEET_PEGAWAI_URL);
+  const sheetRef = ss.getSheetByName("Data_Referensi");
+  const data = sheetRef.getDataRange().getValues().slice(1);
+  const map = { KEGIATAN: [], SUB_KEGIATAN: [], REKENING: [], TEMPAT_TUJUAN: [] };
+  data.forEach(r => { if (map[r[0]] && r[1]) map[r[0]].push(r[1]); });
+  Object.keys(map).forEach(k => map[k] = [...new Set(map[k])]);
+  return map;
+}
+
+function simpanReferensiBaru(payload) {
+  try {
+    initSheets();
+    const jenis = (payload.jenis || '').toUpperCase().trim();
+    const nilai = (payload.nilai || '').trim();
+    if (!jenis || !nilai) return JSON.stringify({ status: 'error', message: 'Data tidak lengkap' });
+    const allowed = ["KEGIATAN", "SUB_KEGIATAN", "REKENING", "TEMPAT_TUJUAN"];
+    if (!allowed.includes(jenis)) return JSON.stringify({ status: 'error', message: 'Jenis tidak valid' });
+    const ss = SpreadsheetApp.openByUrl(SPREADSHEET_PEGAWAI_URL);
+    const sheetRef = ss.getSheetByName("Data_Referensi");
+    const data = sheetRef.getDataRange().getValues();
+    const exists = data.slice(1).some(r => r[0] === jenis && String(r[1]).toLowerCase() === nilai.toLowerCase());
+    if (!exists) sheetRef.appendRow([jenis, nilai, new Date()]);
+    return JSON.stringify({ status: 'success', referensi: getReferensiMap_() });
+  } catch(e) {
+    return JSON.stringify({ status: 'error', message: e.toString() });
+  }
+}
+
+function getAnggaranMap_() {
+  const ss = SpreadsheetApp.openByUrl(SPREADSHEET_PEGAWAI_URL);
+  const sheet = ss.getSheetByName("Data_Anggaran");
+  const data = sheet.getDataRange().getValues().slice(1);
+  return data.map(r => ({ kegiatan:r[0], subKegiatan:r[1], rekeningKegiatan:r[2], objekBelanja:r[3], noRekBelanja:r[4], berangkatDari:r[5] || "Sintang" }));
+}
+
+function simpanAnggaranBaru(payload) {
+  try {
+    initSheets();
+    const ss = SpreadsheetApp.openByUrl(SPREADSHEET_PEGAWAI_URL);
+    const sheet = ss.getSheetByName("Data_Anggaran");
+    sheet.appendRow([payload.kegiatan, payload.subKegiatan, payload.rekeningKegiatan, payload.objekBelanja, payload.noRekBelanja, payload.berangkatDari || "Sintang", new Date()]);
+    return JSON.stringify({ status:'success', anggaran:getAnggaranMap_() });
+  } catch(e) {
+    return JSON.stringify({ status:'error', message:e.toString() });
   }
 }
 
