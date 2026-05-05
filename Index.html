@@ -27,6 +27,8 @@
         /* Style untuk checkbox list pegawai */
         .checkbox-list-item { display: flex; align-items: center; padding: 8px; border-bottom: 1px solid #eee; cursor: pointer; transition: background 0.2s;}
         .checkbox-list-item:hover { background: #f8fafc; }
+        .btn-loading { opacity: .75; pointer-events: none; }
+        .mini-spinner { width: 14px; height: 14px; border: 2px solid rgba(255,255,255,.45); border-top-color: #fff; border-radius: 50%; animation: spin .7s linear infinite; display: inline-block; vertical-align: -2px; margin-right: 6px; }
     </style>
 </head>
 <body class="text-gray-800 overflow-hidden h-screen flex">
@@ -59,7 +61,7 @@
                         <i class="fas fa-eye absolute right-3 top-3 text-gray-400 cursor-pointer hover:text-primary" id="toggle-password" onclick="togglePassword()"></i>
                     </div>
                 </div>
-                <button type="submit" class="w-full bg-primary hover:bg-blue-900 text-white font-semibold py-2.5 rounded-lg transition duration-300 shadow-lg shadow-blue-500/30">
+                <button id="btn-login" type="submit" class="w-full bg-primary hover:bg-blue-900 text-white font-semibold py-2.5 rounded-lg transition duration-300 shadow-lg shadow-blue-500/30">
                     Masuk <i class="fas fa-arrow-right ml-2"></i>
                 </button>
             </form>
@@ -201,13 +203,15 @@
                                 </div>
                                 
                                 <div class="col-span-1 md:col-span-2"><label class="block text-sm font-medium mb-1">Dasar / Pertimbangan</label><textarea id="spt-dasar" required rows="2" class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary" placeholder="Cth: Perlunya Kegiatan Luar Gedung Untuk Menunjang Pelayanan..."></textarea></div>
-                                <div class="col-span-1 md:col-span-2"><label class="block text-sm font-medium mb-1">Tujuan / Maksud Perjalanan Dinas</label><input type="text" id="spt-tujuan" required class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary" placeholder="Cth: Asesment Tingkat Keterampilan Kader..."></div>
+                                <div class="col-span-1 md:col-span-2"><label class="block text-sm font-medium mb-1">Maksud Perjalanan Dinas</label><input type="text" id="spt-tujuan" required class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary" placeholder="Cth: Asesment Tingkat Keterampilan Kader..."></div>
+                                <div><label class="block text-sm font-medium mb-1">Tempat Tujuan Perjalanan Dinas</label><input type="text" id="spt-tempat-tujuan" required class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary" placeholder="Cth: Desa Sungai Ana"></div>
+                                <div><label class="block text-sm font-medium mb-1">Kode Rekening Kegiatan</label><input type="text" id="spt-kode-rekening" required value="1.02.02.2.02.15.0007" class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary" placeholder="Cth: 1.02.02.2.02.15.0007"></div>
                                 
                                 <div><label class="block text-sm font-medium mb-1">Tgl Berangkat</label><input type="date" id="spt-tgl-berangkat" required class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary"></div>
                                 <div><label class="block text-sm font-medium mb-1">Tgl Pulang</label><input type="date" id="spt-tgl-pulang" required class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary"></div>
                             </div>
                             <div class="flex justify-end gap-3 border-t pt-4">
-                                <button type="submit" class="px-5 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-blue-900"><i class="fas fa-save"></i> Proses SPT & SPPD</button>
+                                <button id="btn-spt-submit" type="submit" class="px-5 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-blue-900"><i class="fas fa-save"></i> Proses SPT & SPPD</button>
                             </div>
                         </form>
                     </div>
@@ -255,7 +259,7 @@
                                 </div>
                             </div>
                             <div class="flex justify-end pt-2">
-                                <button type="submit" class="px-5 py-2 text-sm font-medium text-gray-800 bg-secondary rounded-lg hover:bg-yellow-500 shadow-md"><i class="fas fa-save"></i> Simpan Laporan</button>
+                                <button id="btn-laporan-submit" type="submit" class="px-5 py-2 text-sm font-medium text-gray-800 bg-secondary rounded-lg hover:bg-yellow-500 shadow-md"><i class="fas fa-save"></i> Simpan Laporan</button>
                             </div>
                         </form>
                     </div>
@@ -309,7 +313,7 @@
                                 <div class="text-right text-xs text-gray-500 italic" id="kwi-terbilang">Nol Rupiah</div>
                             </div>
                             <div class="flex justify-end gap-3 pt-2">
-                                <button type="submit" class="px-5 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 shadow-md"><i class="fas fa-print"></i> Simpan & Cetak Kwitansi</button>
+                                <button id="btn-kwitansi-submit" type="submit" class="px-5 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 shadow-md"><i class="fas fa-print"></i> Simpan & Cetak Kwitansi</button>
                             </div>
                         </form>
                     </div>
@@ -356,6 +360,28 @@
 
         const showLoading = () => document.getElementById('loading-overlay').classList.remove('hidden');
         const hideLoading = () => document.getElementById('loading-overlay').classList.add('hidden');
+        const actionState = new Set();
+        function startAction(key, buttonId, text='Memproses...') {
+            if (actionState.has(key)) return false;
+            actionState.add(key);
+            const btn = document.getElementById(buttonId);
+            if (btn) {
+                btn.dataset.original = btn.innerHTML;
+                btn.innerHTML = `<span class="mini-spinner"></span>${text}`;
+                btn.classList.add('btn-loading');
+                btn.disabled = true;
+            }
+            return true;
+        }
+        function endAction(key, buttonId) {
+            actionState.delete(key);
+            const btn = document.getElementById(buttonId);
+            if (btn) {
+                btn.disabled = false;
+                btn.classList.remove('btn-loading');
+                if (btn.dataset.original) btn.innerHTML = btn.dataset.original;
+            }
+        }
 
         function togglePassword() {
             const pwd = document.getElementById('password');
@@ -388,6 +414,14 @@
             const year = d.getFullYear();
             const randomSeq = Math.floor(Math.random() * 900) + 100; // Generate no acak 3 digit sebagai placeholder sementara
             return `400.7/${randomSeq}/Tj-Puri/${month}/${year}`;
+        }
+        function generateNomorSPD(index = 1) {
+            const d = new Date();
+            const romawi = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII"];
+            const month = romawi[d.getMonth()];
+            const year = d.getFullYear();
+            const seq = String(Math.floor(Math.random() * 9000) + 1000 + index).slice(-4);
+            return `${seq}/SPD/PKM-TP/${month}/${year}`;
         }
 
         // FUNGSI ADD NEW DROPDOWN (SUMBER DANA DLL)
@@ -435,18 +469,20 @@
         }
 
         function getParsedDetail(s) {
-            let detail = { tujuan: s.tujuan, nomor: '-', dasar: '-', dana: '-', pegawais: [{id_qr: s.id_qr, nama: s.nama}] };
+            let detail = { tujuan: s.tujuan, tempatTujuan: s.tujuan, nomor: '-', dasar: '-', dana: '-', kodeRekening: '1.02.02.2.02.15.0007', pegawais: [{id_qr: s.id_qr, nama: s.nama, nomor_spd: s.id}] };
             try { let parsed = JSON.parse(s.tujuan); if (parsed && parsed.tujuan) detail = parsed; } catch(e) {}
             return detail;
         }
 
         function handleLogin(e) {
             e.preventDefault();
+            if (!startAction('login', 'btn-login', 'Masuk...')) return;
             if (typeof google !== 'undefined') {
                 showLoading();
                 google.script.run.withSuccessHandler(resStr => {
                     let res = JSON.parse(resStr);
                     hideLoading();
+                    endAction('login', 'btn-login');
                     if(res.status === 'success') {
                         dbPegawai = res.pegawai; dbSppd = res.sppd;
                         Swal.fire({ icon: 'success', title: 'Login Berhasil', timer: 1500, showConfirmButton: false }).then(() => {
@@ -455,8 +491,9 @@
                             initDashboard();
                         });
                     } else { Swal.fire('Error', res.message, 'error'); }
-                }).withFailureHandler(err => { hideLoading(); Swal.fire('Error', err.message, 'error'); }).getInitData();
+                }).withFailureHandler(err => { hideLoading(); endAction('login', 'btn-login'); Swal.fire('Error', err.message, 'error'); }).getInitData();
             } else {
+                endAction('login', 'btn-login');
                 Swal.fire('Info', 'Harap jalankan aplikasi ini via Google Apps Script Deployment.', 'warning');
             }
         }
@@ -578,8 +615,9 @@
         // --- MODULE SPT / SPPD ---
         function handleCreateSPT(e) {
             e.preventDefault();
+            if (!startAction('spt', 'btn-spt-submit', 'Memproses SPT...')) return;
             const chk = document.querySelectorAll('input[name="chk_pegawai"]:checked');
-            if(chk.length === 0) return Swal.fire('Peringatan', 'Pilih minimal 1 pegawai untuk diberangkatkan.', 'warning');
+            if(chk.length === 0) { endAction('spt', 'btn-spt-submit'); return Swal.fire('Peringatan', 'Pilih minimal 1 pegawai untuk diberangkatkan.', 'warning'); }
             
             const selectedPegawais = Array.from(chk).map(c => dbPegawai.find(p => p.id_qr === c.value));
             const utama = selectedPegawais[0]; // Jadikan yang pertama sebagai perwakilan row
@@ -587,13 +625,16 @@
             const nomor = document.getElementById('spt-nomor').value;
             const dasar = document.getElementById('spt-dasar').value;
             const dana = document.getElementById('spt-sumber-dana').value;
+            const kodeRekening = document.getElementById('spt-kode-rekening').value;
             const berangkat = document.getElementById('spt-tgl-berangkat').value;
             const pulang = document.getElementById('spt-tgl-pulang').value;
             const tujuan = document.getElementById('spt-tujuan').value;
+            const tempatTujuan = document.getElementById('spt-tempat-tujuan').value;
+            const pegawaisWithNomor = selectedPegawais.map((p, i) => ({ ...p, nomor_spd: generateNomorSPD(i + 1) }));
 
             // Packing Extra Data ke string JSON
             const complexTujuanJSON = JSON.stringify({
-                tujuan: tujuan, nomor: nomor, dasar: dasar, dana: dana, pegawais: selectedPegawais
+                tujuan: tujuan, tempatTujuan: tempatTujuan, nomor: nomor, dasar: dasar, dana: dana, kodeRekening: kodeRekening, pegawais: pegawaisWithNomor
             });
 
             showLoading();
@@ -606,10 +647,10 @@
                             title: 'Peringatan Absensi!',
                             html: `Pegawai utama <b>${utama.nama}</b> berstatus <b>${res.absen}</b>. Tetap Lanjutkan?`,
                             icon: 'warning', showCancelButton: true, confirmButtonColor: '#FBBF24', confirmButtonText: 'Lanjutkan'
-                        }).then((result) => { if (result.isConfirmed) saveSPT(utama.id_qr, utama.nama + (selectedPegawais.length > 1 ? " dkk" : ""), complexTujuanJSON, berangkat, pulang); });
+                        }).then((result) => { if (result.isConfirmed) saveSPT(utama.id_qr, utama.nama + (selectedPegawais.length > 1 ? " dkk" : ""), complexTujuanJSON, berangkat, pulang); else endAction('spt', 'btn-spt-submit'); });
                     } else { saveSPT(utama.id_qr, utama.nama + (selectedPegawais.length > 1 ? " dkk" : ""), complexTujuanJSON, berangkat, pulang); }
                 }
-            }).cekAbsensiReal(utama.id_qr, berangkat);
+            }).withFailureHandler(() => { hideLoading(); endAction('spt', 'btn-spt-submit'); Swal.fire('Error', 'Gagal mengecek absensi.', 'error'); }).cekAbsensiReal(utama.id_qr, berangkat);
         }
 
         function saveSPT(id_qr, nama, tujuanStr, berangkat, pulang) {
@@ -624,7 +665,8 @@
                     document.getElementById('spt-nomor').value = generateNomorSPT();
                     initDashboard();
                 }
-            }).simpanSPPDReal({ id_qr: id_qr, nama: nama, tujuan: tujuanStr, berangkat: berangkat, pulang: pulang });
+                endAction('spt', 'btn-spt-submit');
+            }).withFailureHandler(() => { hideLoading(); endAction('spt', 'btn-spt-submit'); Swal.fire('Error', 'Gagal menyimpan SPT/SPPD.', 'error'); }).simpanSPPDReal({ id_qr: id_qr, nama: nama, tujuan: tujuanStr, berangkat: berangkat, pulang: pulang });
         }
 
         function renderSppd() {
@@ -700,55 +742,39 @@
         window.printSPPD = function(id) {
             let s = dbSppd.find(x => x.id === id);
             let det = getParsedDetail(s);
-            
-            // Hitung Lama Perjalanan Hari
             let d1 = new Date(s.berangkat); let d2 = new Date(s.pulang);
             let diffHari = Math.ceil((d2 - d1) / (1000 * 60 * 60 * 24)) + 1;
-
-            // Generate per orang
-            let pagesHtml = det.pegawais.map((p, index) => {
-                return `
-                <div style="page-break-after: ${index === det.pegawais.length - 1 ? 'auto' : 'always'};">
-                    ${kopSuratHtml}
-                    <div style="text-align: center; font-weight: bold; text-decoration: underline; font-size: 16px; margin-bottom: 20px;">SURAT PERJALANAN DINAS</div>
-                    <table style="width:100%; border-collapse: collapse; font-size:14px;" border="1" cellpadding="6">
-                        <tr><td style="width: 30px; text-align: center;">1</td><td style="width: 250px;">Pejabat yang berwenang memberikan perintah</td><td>Kepala UPTD Puskesmas Tanjung Puri</td></tr>
-                        <tr><td style="text-align: center;">2</td><td>Dasar dan Maksud Perjalanan Dinas</td><td>${det.dasar}</td></tr>
-                        <tr><td style="text-align: center; vertical-align: top;">3</td><td>Pegawai yang melaksanakan Perjalanan Dinas<br>a. NAMA/NIP<br>b. PANGKAT dan GOLONGAN<br>c. JABATAN</td><td><br>a. <b>${p.nama}</b> / ${p.nip || '-'}<br>b. ${p.pangkat || '-'}<br>c. ${p.jabatan || '-'}</td></tr>
-                        <tr><td style="text-align: center;">4</td><td>Tempat Tujuan Perjalanan Dinas</td><td>${det.tujuan}</td></tr>
-                        <tr><td style="text-align: center;">5</td><td>Lamanya Perjalanan Dinas</td><td>${diffHari} Hari</td></tr>
-                        <tr><td style="text-align: center; vertical-align: top;">6</td><td>Pembebanan Anggaran :<br>a. SKPD<br>b. Kode Rekening</td><td><br>a. ${det.dana}<br>b. -</td></tr>
-                        <tr><td style="text-align: center;">7</td><td>Tanggal Berangkat</td><td>${formatTanggalIndo(s.berangkat)}</td></tr>
-                        <tr>
-                            <td style="text-align: center; vertical-align: top;">8</td>
-                            <td style="vertical-align: top;">Tiba di: ${det.tujuan}<br>Tanggal: ${formatTanggalIndo(s.berangkat)}</td>
-                            <td style="vertical-align: top;">Berangkat Dari: Puskesmas Tanjung Puri<br>Ke: ${det.tujuan}<br>Tanggal: ${formatTanggalIndo(s.berangkat)}</td>
-                        </tr>
-                        <tr>
-                            <td style="text-align: center; vertical-align: top;">9</td>
-                            <td style="vertical-align: top;">Tiba di: Sintang<br>Tanggal: ${formatTanggalIndo(s.pulang)}</td>
-                            <td style="vertical-align: top;">Berangkat Dari: ${det.tujuan}<br>Ke: Sintang<br>Tanggal: ${formatTanggalIndo(s.pulang)}</td>
-                        </tr>
-                        <tr><td style="text-align: center;">10</td><td>Harus Tiba di Sintang pada Tanggal</td><td>${formatTanggalIndo(s.pulang)}</td></tr>
-                        <tr><td style="text-align: center;">11</td><td>Keterangan Lain-Lain</td><td>-</td></tr>
-                        <tr><td style="text-align: center;">12</td><td colspan="2">Telah diperiksa dengan keterangan bahwa perjalanan dinas tersebut atas perintahnya dan semata-mata untuk kepentingan dinas dalam waktu yang sesingkat-singkatnya</td></tr>
-                    </table>
-                    <div style="width: 300px; float: right; text-align: center; margin-top: 30px; font-size: 14px;">
-                        Ditetapkan di : Sintang<br>Pada Tanggal : ${formatTanggalIndo(s.berangkat)}<br>
-                        <b>Kepala UPTD Puskesmas Tanjung Puri</b><br><br><br><br><br>
-                        <b><u>dr. ANDAR JIMMY PINTABAR, M.A.P, M.H.Kes</u></b><br>NIP. 19861029 201402 1 002
-                    </div>
-                    <div style="clear:both;"></div>
-                </div>`;
-            }).join('');
-
-            let html = `<html><head><title>Cetak SPPD - ${id}</title><style>body { font-family: 'Times New Roman', serif; padding: 20px; }</style></head><body>${pagesHtml}<script>window.onload = function() { window.print(); }<\/script></body></html>`;
+            const rowHtml = det.pegawais.map((p, i) => `
+                <tr><td style="padding:6px;">${String.fromCharCode(97+i)}.</td><td style="padding:6px;">${p.nama}${p.nip ? ' / ' + p.nip : ''}</td><td style="padding:6px;">${p.pangkat || '-'}</td><td style="padding:6px;">${p.jabatan || '-'}</td><td style="padding:6px;">${p.nomor_spd || generateNomorSPD(i + 1)}</td></tr>
+            `).join('');
+            let html = `<html><head><title>Cetak SPPD - ${id}</title><style>
+                body { font-family: Arial, sans-serif; padding: 20px; font-size: 13px; }
+                table { width:100%; border-collapse:collapse; } td,th { border:1px solid #111; vertical-align: top; }
+            </style></head><body>${kopSuratHtml}
+            <h2 style="text-align:center; text-decoration:underline; margin:8px 0;">SURAT PERJALANAN DINAS</h2>
+            <table>
+            <tr><td style="width:30px; text-align:center;">1</td><td style="width:32%;">Pejabat yang berwenang memberikan perintah</td><td colspan="3">Kepala UPTD Puskesmas Tanjung Puri</td></tr>
+            <tr><td style="text-align:center;">2</td><td>Dasar dan Maksud Perjalanan Dinas</td><td colspan="3">${det.dasar}</td></tr>
+            <tr><td style="text-align:center;">3</td><td colspan="4">Pegawai yang melaksanakan Perjalanan Dinas</td></tr>
+            <tr><th style="border-left:none;border-right:none;"></th><th>NAMA / NIP</th><th>PANGKAT dan GOLONGAN</th><th>JABATAN</th><th>NOMOR SPD</th></tr>
+            ${rowHtml}
+            <tr><td style="text-align:center;">4</td><td>Tempat Tujuan Perjalanan Dinas</td><td colspan="3">${det.tempatTujuan || det.tujuan}</td></tr>
+            <tr><td style="text-align:center;">5</td><td>Lamanya Perjalanan Dinas</td><td colspan="3">${diffHari} hari</td></tr>
+            <tr><td style="text-align:center;">6</td><td>Pembebanan Anggaran :<br>a. SKPD<br>b. Kode Rekening</td><td colspan="3">a. ${det.dana}<br>b. ${det.kodeRekening || '-'}</td></tr>
+            <tr><td style="text-align:center;">7</td><td>Tanggal Berangkat</td><td colspan="3">${formatTanggalIndo(s.berangkat)}</td></tr>
+            <tr><td style="text-align:center;">8</td><td>Tiba di : ${det.tempatTujuan || det.tujuan}<br>Tanggal : ${formatTanggalIndo(s.berangkat)}</td><td colspan="3">Berangkat Dari : ${det.tempatTujuan || det.tujuan}<br>Ke : Kupan Jaya<br>Tanggal : ${formatTanggalIndo(s.berangkat)}</td></tr>
+            <tr><td style="text-align:center;">9</td><td>Tiba di :<br>Tanggal :</td><td colspan="3">Berangkat Dari :<br>Ke :<br>Tanggal :</td></tr>
+            <tr><td style="text-align:center;">10</td><td>Harus Tiba di Kupan Jaya pada Tanggal</td><td colspan="3">${formatTanggalIndo(s.pulang)}</td></tr>
+            <tr><td style="text-align:center;">11</td><td>Keterangan Lain-Lain</td><td colspan="3">-</td></tr>
+            <tr><td style="text-align:center;">12</td><td colspan="4">Telah diperiksa dengan keterangan bahwa perjalanan dinas tersebut atas perintahnya dan semata-mata untuk kepentingan dinas dalam waktu yang sesingkat-singkatnya<br><br><div style="width:45%; margin-left:auto;">Ditetapkan di : Sintang<br>Pada Tanggal : ${formatTanggalIndo(s.berangkat)}<br><br>Kepala UPTD Puskesmas Tanjung Puri<br><br><br><br><b><u>dr. ANDAR JIMMY PINTABAR, M.A.P, M.H.Kes</u></b><br>PEMBINA<br>NIP. 19861029 201402 1 002</div></td></tr>
+            </table><script>window.onload=function(){window.print();}<\/script></body></html>`;
             let w = window.open('','_blank'); w.document.write(html); w.document.close();
         }
 
         // --- MODULE LAPORAN ---
         function handleLaporan(e) {
             e.preventDefault();
+            if (!startAction('laporan', 'btn-laporan-submit', 'Menyimpan...')) return;
             const id_sppd = document.getElementById('lap-sppd').value;
             const hasil = document.getElementById('lap-hasil').value;
             const kesimpulan = document.getElementById('lap-kesimpulan').value;
@@ -770,7 +796,8 @@
                     document.getElementById('form-laporan').reset();
                     initDashboard();
                 }
-            }).simpanLaporanReal({ id_sppd: id_sppd, hasil: hasil });
+                endAction('laporan', 'btn-laporan-submit');
+            }).withFailureHandler(() => { hideLoading(); endAction('laporan', 'btn-laporan-submit'); Swal.fire('Error', 'Gagal menyimpan laporan.', 'error'); }).simpanLaporanReal({ id_sppd: id_sppd, hasil: hasil });
         }
 
         window.printLaporan = function(id) {
@@ -828,6 +855,7 @@
 
         function handleKwitansi(e) {
             e.preventDefault();
+            if (!startAction('kwitansi', 'btn-kwitansi-submit', 'Menyimpan...')) return;
             const id_sppd = document.getElementById('kwi-sppd').value;
             const total = document.getElementById('kwi-total-value').value;
             
@@ -857,7 +885,8 @@
                     document.getElementById('form-kwitansi').reset();
                     kalkulasiKwitansi();
                 });
-            }).simpanKwitansiReal({ id_sppd: id_sppd, transport: dataForm.rincian[4], penginapan: dataForm.rincian[0], uang_harian: parseInt(dataForm.rincian[1])+parseInt(dataForm.rincian[2]), total: total });
+                endAction('kwitansi', 'btn-kwitansi-submit');
+            }).withFailureHandler(() => { hideLoading(); endAction('kwitansi', 'btn-kwitansi-submit'); Swal.fire('Error', 'Gagal menyimpan kwitansi.', 'error'); }).simpanKwitansiReal({ id_sppd: id_sppd, transport: dataForm.rincian[4], penginapan: dataForm.rincian[0], uang_harian: parseInt(dataForm.rincian[1])+parseInt(dataForm.rincian[2]), total: total });
         }
 
         window.printKwitansi = function(id_sppd, total, fData) {
