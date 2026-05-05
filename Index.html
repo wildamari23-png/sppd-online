@@ -204,8 +204,26 @@
                                 
                                 <div class="col-span-1 md:col-span-2"><label class="block text-sm font-medium mb-1">Dasar / Pertimbangan</label><textarea id="spt-dasar" required rows="2" class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary" placeholder="Cth: Perlunya Kegiatan Luar Gedung Untuk Menunjang Pelayanan..."></textarea></div>
                                 <div class="col-span-1 md:col-span-2"><label class="block text-sm font-medium mb-1">Maksud Perjalanan Dinas</label><input type="text" id="spt-tujuan" required class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary" placeholder="Cth: Asesment Tingkat Keterampilan Kader..."></div>
-                                <div><label class="block text-sm font-medium mb-1">Tempat Tujuan Perjalanan Dinas</label><input type="text" id="spt-tempat-tujuan" required class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary" placeholder="Cth: Desa Sungai Ana"></div>
-                                <div><label class="block text-sm font-medium mb-1">Kode Rekening Kegiatan</label><input type="text" id="spt-kode-rekening" required value="1.02.02.2.02.15.0007" class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary" placeholder="Cth: 1.02.02.2.02.15.0007"></div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-1">Tempat Tujuan Perjalanan Dinas</label>
+                                    <select id="spt-tempat-tujuan-select" onchange="handleDropdownBaru(this, 'spt-tempat-tujuan', 'TEMPAT_TUJUAN')" class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary outline-none"></select>
+                                    <input type="hidden" id="spt-tempat-tujuan">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-1">Kegiatan</label>
+                                    <select id="spt-kegiatan-select" onchange="handleDropdownBaru(this, 'spt-kegiatan', 'KEGIATAN')" class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary outline-none"></select>
+                                    <input type="hidden" id="spt-kegiatan">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-1">Sub Kegiatan</label>
+                                    <select id="spt-sub-kegiatan-select" onchange="handleDropdownBaru(this, 'spt-sub-kegiatan', 'SUB_KEGIATAN')" class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary outline-none"></select>
+                                    <input type="hidden" id="spt-sub-kegiatan">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-1">Kode Rekening Kegiatan</label>
+                                    <select id="spt-kode-rekening-select" onchange="handleDropdownBaru(this, 'spt-kode-rekening', 'REKENING')" class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary outline-none"></select>
+                                    <input type="hidden" id="spt-kode-rekening">
+                                </div>
                                 
                                 <div><label class="block text-sm font-medium mb-1">Tgl Berangkat</label><input type="date" id="spt-tgl-berangkat" required class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary"></div>
                                 <div><label class="block text-sm font-medium mb-1">Tgl Pulang</label><input type="date" id="spt-tgl-pulang" required class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary"></div>
@@ -272,7 +290,7 @@
                         <form id="form-kwitansi" onsubmit="handleKwitansi(event)">
                             <div class="mb-4">
                                 <label class="block text-sm font-medium mb-1">Pilih Dokumen Perjalanan (Status Selesai)</label>
-                                <select id="kwi-sppd" required class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-500"></select>
+                                <select id="kwi-sppd" onchange="syncKwitansiFromSPPD()" required class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-500"></select>
                             </div>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 bg-green-50 p-4 rounded-lg">
                                 <div>
@@ -353,6 +371,7 @@
         let dbPegawai = [];
         let dbSppd = [];
         let dbLaporan = []; // Lokal state untuk teks laporan agar bisa di print
+        let dbReferensi = { KEGIATAN: [], SUB_KEGIATAN: [], REKENING: [], TEMPAT_TUJUAN: [] };
 
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('current-date').innerText = formatTanggalIndo(new Date().toISOString().split('T')[0]);
@@ -425,7 +444,28 @@
         }
 
         // FUNGSI ADD NEW DROPDOWN (SUMBER DANA DLL)
-        window.handleDropdownBaru = function(sel, hiddenId) {
+        function populateDynamicDropdown(selectId, hiddenId, jenis) {
+            const sel = document.getElementById(selectId);
+            const data = dbReferensi[jenis] || [];
+            sel.innerHTML = data.map(v => `<option value="${v}">${v}</option>`).join('') + `<option value="ADD_NEW" class="font-bold text-primary">+ Tambah Baru...</option>`;
+            if (data.length) {
+                sel.value = data[0];
+                document.getElementById(hiddenId).value = data[0];
+            }
+        }
+
+        function syncKwitansiFromSPPD() {
+            const id = document.getElementById('kwi-sppd').value;
+            const s = dbSppd.find(x => x.id === id);
+            if (!s) return;
+            const det = getParsedDetail(s);
+            if (det.kegiatan) document.getElementById('kwi-kode').value = det.kegiatan;
+            if (det.kodeRekening) document.getElementById('kwi-rek').value = det.kodeRekening;
+            document.getElementById('kwi-kode-select').value = document.getElementById('kwi-kode').value;
+            document.getElementById('kwi-rek-select').value = document.getElementById('kwi-rek').value;
+        }
+
+        window.handleDropdownBaru = function(sel, hiddenId, jenisRef = null) {
             if(sel.value === 'ADD_NEW') {
                 Swal.fire({
                     title: 'Tambah Item Baru',
@@ -437,13 +477,27 @@
                 }).then((result) => {
                     if(result.isConfirmed && result.value) {
                         const newVal = result.value;
-                        const opt = new Option(newVal, newVal);
-                        // Insert sebelum opsi ADD_NEW
-                        sel.add(opt, sel.options[sel.options.length - 1]);
-                        sel.value = newVal;
-                        document.getElementById(hiddenId).value = newVal;
-                        // Catatan: Ini tersimpan sementara di UI. Untuk permanen perlu disimpan via google.script.run ke sheet
-                        Swal.fire('Tersimpan di Sesi Ini', 'Item ditambahkan ke daftar dropdown.', 'success');
+                        if (jenisRef && typeof google !== 'undefined') {
+                            google.script.run.withSuccessHandler(resStr => {
+                                const res = JSON.parse(resStr);
+                                if (res.status === 'success') {
+                                    dbReferensi = res.referensi || dbReferensi;
+                                    populateDynamicDropdown('spt-tempat-tujuan-select', 'spt-tempat-tujuan', 'TEMPAT_TUJUAN');
+                                    populateDynamicDropdown('spt-kegiatan-select', 'spt-kegiatan', 'KEGIATAN');
+                                    populateDynamicDropdown('spt-sub-kegiatan-select', 'spt-sub-kegiatan', 'SUB_KEGIATAN');
+                                    populateDynamicDropdown('spt-kode-rekening-select', 'spt-kode-rekening', 'REKENING');
+                                    sel.value = newVal;
+                                    document.getElementById(hiddenId).value = newVal;
+                                    Swal.fire('Berhasil', 'Item baru tersimpan ke sheet referensi.', 'success');
+                                }
+                            }).simpanReferensiBaru({ jenis: jenisRef, nilai: newVal });
+                        } else {
+                            const opt = new Option(newVal, newVal);
+                            sel.add(opt, sel.options[sel.options.length - 1]);
+                            sel.value = newVal;
+                            document.getElementById(hiddenId).value = newVal;
+                            Swal.fire('Tersimpan di Sesi Ini', 'Item ditambahkan ke daftar dropdown.', 'success');
+                        }
                     } else {
                         sel.selectedIndex = 0; // Kembalikan ke pilihan pertama
                         document.getElementById(hiddenId).value = sel.value;
@@ -485,6 +539,11 @@
                     endAction('login', 'btn-login');
                     if(res.status === 'success') {
                         dbPegawai = res.pegawai; dbSppd = res.sppd;
+                        dbReferensi = res.referensi || dbReferensi;
+                        populateDynamicDropdown('spt-tempat-tujuan-select', 'spt-tempat-tujuan', 'TEMPAT_TUJUAN');
+                        populateDynamicDropdown('spt-kegiatan-select', 'spt-kegiatan', 'KEGIATAN');
+                        populateDynamicDropdown('spt-sub-kegiatan-select', 'spt-sub-kegiatan', 'SUB_KEGIATAN');
+                        populateDynamicDropdown('spt-kode-rekening-select', 'spt-kode-rekening', 'REKENING');
                         Swal.fire({ icon: 'success', title: 'Login Berhasil', timer: 1500, showConfirmButton: false }).then(() => {
                             document.getElementById('login-screen').classList.add('hidden');
                             document.getElementById('app-screen').classList.remove('hidden');
@@ -527,6 +586,7 @@
             if(viewId === 'monitoring') renderMonitoring();
             if(viewId === 'laporan') populateSelectsSPPD('lap-sppd', dbSppd.filter(s=>s.status!=='Selesai'));
             if(viewId === 'kwitansi') populateSelectsSPPD('kwi-sppd', dbSppd.filter(s=>s.status==='Selesai'));
+            if(viewId === 'kwitansi') setTimeout(syncKwitansiFromSPPD, 50);
         }
 
         function populateSelectsSPPD(elementId, dataArray) {
@@ -625,6 +685,8 @@
             const nomor = document.getElementById('spt-nomor').value;
             const dasar = document.getElementById('spt-dasar').value;
             const dana = document.getElementById('spt-sumber-dana').value;
+            const kegiatan = document.getElementById('spt-kegiatan').value;
+            const subKegiatan = document.getElementById('spt-sub-kegiatan').value;
             const kodeRekening = document.getElementById('spt-kode-rekening').value;
             const berangkat = document.getElementById('spt-tgl-berangkat').value;
             const pulang = document.getElementById('spt-tgl-pulang').value;
@@ -634,7 +696,7 @@
 
             // Packing Extra Data ke string JSON
             const complexTujuanJSON = JSON.stringify({
-                tujuan: tujuan, tempatTujuan: tempatTujuan, nomor: nomor, dasar: dasar, dana: dana, kodeRekening: kodeRekening, pegawais: pegawaisWithNomor
+                tujuan: tujuan, tempatTujuan: tempatTujuan, nomor: nomor, dasar: dasar, dana: dana, kegiatan: kegiatan, subKegiatan: subKegiatan, kodeRekening: kodeRekening, pegawais: pegawaisWithNomor
             });
 
             showLoading();
