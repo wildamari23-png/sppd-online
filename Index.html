@@ -216,7 +216,7 @@
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium mb-1">Sub Kegiatan</label>
-                                    <select id="spt-sub-kegiatan-select" onchange="handleDropdownBaru(this, 'spt-sub-kegiatan', 'SUB_KEGIATAN')" class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary outline-none"></select>
+                                    <select id="spt-sub-kegiatan-select" class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary outline-none"></select>
                                     <input type="hidden" id="spt-sub-kegiatan">
                                 </div>
                                 <div>
@@ -224,6 +224,9 @@
                                     <select id="spt-kode-rekening-select" onchange="handleDropdownBaru(this, 'spt-kode-rekening', 'REKENING')" class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary outline-none"></select>
                                     <input type="hidden" id="spt-kode-rekening">
                                 </div>
+                                <div><label class="block text-sm font-medium mb-1">Objek Belanja</label><input type="text" id="spt-objek-belanja" class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary"></div>
+                                <div><label class="block text-sm font-medium mb-1">No Rekening Belanja</label><input type="text" id="spt-no-rek-belanja" class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary"></div>
+                                <div><label class="block text-sm font-medium mb-1">Berangkat Dari</label><input type="text" id="spt-berangkat-dari" value="Sintang" class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary"></div>
                                 
                                 <div><label class="block text-sm font-medium mb-1">Tgl Berangkat</label><input type="date" id="spt-tgl-berangkat" required class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary"></div>
                                 <div><label class="block text-sm font-medium mb-1">Tgl Pulang</label><input type="date" id="spt-tgl-pulang" required class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary"></div>
@@ -372,6 +375,7 @@
         let dbSppd = [];
         let dbLaporan = []; // Lokal state untuk teks laporan agar bisa di print
         let dbReferensi = { KEGIATAN: [], SUB_KEGIATAN: [], REKENING: [], TEMPAT_TUJUAN: [] };
+        let dbAnggaran = [];
 
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('current-date').innerText = formatTanggalIndo(new Date().toISOString().split('T')[0]);
@@ -452,6 +456,29 @@
                 sel.value = data[0];
                 document.getElementById(hiddenId).value = data[0];
             }
+        }
+        function updateDependentAnggaran() {
+            const keg = document.getElementById('spt-kegiatan').value;
+            const subSel = document.getElementById('spt-sub-kegiatan-select');
+            const subset = dbAnggaran.filter(x => x.kegiatan === keg);
+            const subList = [...new Set(subset.map(x => x.subKegiatan))];
+            subSel.innerHTML = subList.map(v => `<option value="${v}">${v}</option>`).join('') + `<option value="ADD_NEW" class="font-bold text-primary">+ Tambah Baru...</option>`;
+            const sub = subList[0] || '';
+            subSel.value = sub; document.getElementById('spt-sub-kegiatan').value = sub;
+            const row = subset.find(x => x.subKegiatan === sub);
+            if (row) {
+                document.getElementById('spt-kode-rekening').value = row.rekeningKegiatan || '';
+                document.getElementById('spt-kode-rekening-select').value = row.rekeningKegiatan || '';
+                document.getElementById('spt-objek-belanja').value = row.objekBelanja || '';
+                document.getElementById('spt-no-rek-belanja').value = row.noRekBelanja || '';
+                document.getElementById('spt-berangkat-dari').value = row.berangkatDari || 'Sintang';
+            }
+        }
+        function smartGenerateByAnggaran() {
+            const keg = document.getElementById('spt-kegiatan').value;
+            const sub = document.getElementById('spt-sub-kegiatan').value;
+            if (!document.getElementById('spt-dasar').value) document.getElementById('spt-dasar').value = `Pelaksanaan ${sub} pada ${keg} untuk peningkatan cakupan pelayanan kesehatan masyarakat.`;
+            if (!document.getElementById('spt-tujuan').value) document.getElementById('spt-tujuan').value = `Monitoring dan evaluasi ${sub} sesuai rencana kerja kegiatan.`;
         }
 
         function syncKwitansiFromSPPD() {
@@ -540,10 +567,14 @@
                     if(res.status === 'success') {
                         dbPegawai = res.pegawai; dbSppd = res.sppd;
                         dbReferensi = res.referensi || dbReferensi;
+                        dbAnggaran = res.anggaran || [];
                         populateDynamicDropdown('spt-tempat-tujuan-select', 'spt-tempat-tujuan', 'TEMPAT_TUJUAN');
                         populateDynamicDropdown('spt-kegiatan-select', 'spt-kegiatan', 'KEGIATAN');
                         populateDynamicDropdown('spt-sub-kegiatan-select', 'spt-sub-kegiatan', 'SUB_KEGIATAN');
                         populateDynamicDropdown('spt-kode-rekening-select', 'spt-kode-rekening', 'REKENING');
+                        document.getElementById('spt-kegiatan-select').addEventListener('change', ()=>{document.getElementById('spt-kegiatan').value=document.getElementById('spt-kegiatan-select').value; updateDependentAnggaran(); smartGenerateByAnggaran();});
+                        document.getElementById('spt-sub-kegiatan-select').addEventListener('change', ()=>{document.getElementById('spt-sub-kegiatan').value=document.getElementById('spt-sub-kegiatan-select').value; smartGenerateByAnggaran();});
+                        updateDependentAnggaran();
                         Swal.fire({ icon: 'success', title: 'Login Berhasil', timer: 1500, showConfirmButton: false }).then(() => {
                             document.getElementById('login-screen').classList.add('hidden');
                             document.getElementById('app-screen').classList.remove('hidden');
@@ -688,6 +719,9 @@
             const kegiatan = document.getElementById('spt-kegiatan').value;
             const subKegiatan = document.getElementById('spt-sub-kegiatan').value;
             const kodeRekening = document.getElementById('spt-kode-rekening').value;
+            const objekBelanja = document.getElementById('spt-objek-belanja').value;
+            const noRekBelanja = document.getElementById('spt-no-rek-belanja').value;
+            const berangkatDari = document.getElementById('spt-berangkat-dari').value || 'Sintang';
             const berangkat = document.getElementById('spt-tgl-berangkat').value;
             const pulang = document.getElementById('spt-tgl-pulang').value;
             const tujuan = document.getElementById('spt-tujuan').value;
@@ -696,8 +730,9 @@
 
             // Packing Extra Data ke string JSON
             const complexTujuanJSON = JSON.stringify({
-                tujuan: tujuan, tempatTujuan: tempatTujuan, nomor: nomor, dasar: dasar, dana: dana, kegiatan: kegiatan, subKegiatan: subKegiatan, kodeRekening: kodeRekening, pegawais: pegawaisWithNomor
+                tujuan: tujuan, tempatTujuan: tempatTujuan, nomor: nomor, dasar: dasar, dana: dana, kegiatan: kegiatan, subKegiatan: subKegiatan, kodeRekening: kodeRekening, objekBelanja: objekBelanja, noRekBelanja: noRekBelanja, berangkatDari: berangkatDari, pegawais: pegawaisWithNomor
             });
+            if (typeof google !== 'undefined' && kegiatan && subKegiatan && kodeRekening) google.script.run.simpanAnggaranBaru({ kegiatan, subKegiatan, rekeningKegiatan: kodeRekening, objekBelanja, noRekBelanja, berangkatDari });
 
             showLoading();
             google.script.run.withSuccessHandler(resStr => {
@@ -824,7 +859,7 @@
             <tr><td style="text-align:center;">5</td><td>Lamanya Perjalanan Dinas</td><td colspan="3">${diffHari} hari</td></tr>
             <tr><td style="text-align:center;">6</td><td>Pembebanan Anggaran :<br>a. SKPD<br>b. Kode Rekening</td><td colspan="3">a. ${det.dana}<br>b. ${det.kodeRekening || '-'}</td></tr>
             <tr><td style="text-align:center;">7</td><td>Tanggal Berangkat</td><td colspan="3">${formatTanggalIndo(s.berangkat)}</td></tr>
-            <tr><td style="text-align:center;">8</td><td>Tiba di : ${det.tempatTujuan || det.tujuan}<br>Tanggal : ${formatTanggalIndo(s.berangkat)}</td><td colspan="3">Berangkat Dari : ${det.tempatTujuan || det.tujuan}<br>Ke : Kupan Jaya<br>Tanggal : ${formatTanggalIndo(s.berangkat)}</td></tr>
+            <tr><td style="text-align:center;">8</td><td>Tiba di : ${det.tempatTujuan || det.tujuan}<br>Tanggal : ${formatTanggalIndo(s.berangkat)}<br><br><div style="height:70px;"></div><div style="text-align:center;">(Tanda tangan & cap)</div></td><td colspan="3">Berangkat Dari : ${det.berangkatDari || 'Sintang'}<br>Ke : ${det.tempatTujuan || det.tujuan}<br>Tanggal : ${formatTanggalIndo(s.berangkat)}<br><br><div style="height:70px;"></div><div style="text-align:center;">(Tanda tangan & cap)</div></td></tr>
             <tr><td style="text-align:center;">9</td><td>Tiba di :<br>Tanggal :</td><td colspan="3">Berangkat Dari :<br>Ke :<br>Tanggal :</td></tr>
             <tr><td style="text-align:center;">10</td><td>Harus Tiba di Kupan Jaya pada Tanggal</td><td colspan="3">${formatTanggalIndo(s.pulang)}</td></tr>
             <tr><td style="text-align:center;">11</td><td>Keterangan Lain-Lain</td><td colspan="3">-</td></tr>
