@@ -1,487 +1,935 @@
 <!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
-  <base target="_top">
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>SIM SPPD</title>
-  <style>
-    :root{--primary:#0d6efd;--secondary:#ffc107;--bg:#f5f8ff;--text:#122033;--muted:#6b7a90;--card:#ffffff;--danger:#dc3545;--success:#198754;--shadow:0 18px 45px rgba(13,110,253,.12)}
-    *{box-sizing:border-box} body{margin:0;font-family:Inter,Arial,sans-serif;background:linear-gradient(135deg,#eef5ff,#fff8d6);color:var(--text)}
-    .hidden{display:none!important}.app{min-height:100vh}.login-wrap{display:grid;place-items:center;min-height:100vh;padding:24px}
-    .login-card,.panel{background:rgba(255,255,255,.88);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.65);box-shadow:var(--shadow);border-radius:24px}
-    .login-card{width:100%;max-width:460px;padding:30px;animation:up .7s ease}.brand{display:flex;align-items:center;gap:14px;margin-bottom:18px}.logo{width:58px;height:58px;border-radius:18px;background:linear-gradient(135deg,var(--primary),var(--secondary));display:grid;place-items:center;color:#fff;font-size:24px;font-weight:800;overflow:hidden}.logo img{width:100%;height:100%;object-fit:cover}
-    h1,h2,h3{margin:0 0 10px}.sub{color:var(--muted);font-size:14px;margin-bottom:16px}.field{margin:12px 0}.label{display:block;font-size:13px;font-weight:700;margin-bottom:7px}.input,select,textarea{width:100%;padding:13px 14px;border:1px solid #d7e1f3;border-radius:14px;background:#fff;font-size:14px;outline:none;transition:.2s} .input:focus,select:focus,textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(13,110,253,.12)}
-    .row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.actions{display:flex;gap:10px;flex-wrap:wrap}.btn{border:none;border-radius:14px;padding:12px 16px;font-weight:700;cursor:pointer;transition:.2s;display:inline-flex;align-items:center;gap:8px}.btn:hover{transform:translateY(-1px)}.btn-primary{background:linear-gradient(135deg,var(--primary),#3c8cff);color:#fff}.btn-secondary{background:linear-gradient(135deg,var(--secondary),#ffe27a);color:#222}.btn-dark{background:#16263d;color:#fff}.btn-outline{background:#fff;border:1px solid #d5e1f3}.btn-danger{background:var(--danger);color:#fff}
-    .remember{display:flex;justify-content:space-between;gap:12px;align-items:center;font-size:13px;color:var(--muted)}
-    .main{display:grid;grid-template-columns:280px 1fr;min-height:100vh}.sidebar{padding:18px;background:rgba(10,26,56,.92);color:#fff}.sidebar .brand{margin-bottom:26px}.sidebar .logo{box-shadow:none}.menu button{width:100%;text-align:left;background:transparent;color:#dbe7ff;padding:13px 14px;border:none;border-radius:14px;font-weight:700;margin:6px 0;cursor:pointer}.menu button.active,.menu button:hover{background:rgba(255,255,255,.14);color:#fff}
-    .content{padding:20px}.topbar{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:16px}.welcome{font-size:14px;color:var(--muted)}.panels{display:grid;gap:16px}.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}.stat{padding:18px;border-radius:22px;background:var(--card);box-shadow:var(--shadow);animation:up .5s ease}.stat .n{font-size:30px;font-weight:800}.stat .t{font-size:13px;color:var(--muted)}
-    .panel{padding:18px;animation:up .45s ease}.panel-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px}.table-wrap{overflow:auto;border-radius:18px;border:1px solid #edf2fb}.table{width:100%;border-collapse:collapse;background:#fff}.table th,.table td{padding:12px;border-bottom:1px solid #eef3fb;font-size:13px;text-align:left;vertical-align:top}.table th{background:#f7faff;position:sticky;top:0}
-    .badge{display:inline-block;padding:6px 10px;border-radius:999px;font-size:12px;font-weight:800}.badge.blue{background:#e7f0ff;color:#0d6efd}.badge.yellow{background:#fff5d1;color:#9b6b00}.badge.green{background:#dff5e8;color:#198754}
-    .grid-3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.muted{color:var(--muted)} footer{margin-top:18px;padding:12px 2px;color:var(--muted);font-size:12px;text-align:center}
-    .toast-wrap{position:fixed;top:18px;right:18px;display:grid;gap:10px;z-index:9999}.toast{min-width:290px;max-width:380px;padding:14px 16px;border-radius:18px;color:#fff;box-shadow:0 18px 40px rgba(0,0,0,.18);animation:slide .35s ease}.toast.success{background:linear-gradient(135deg,#198754,#34c47d)}.toast.error{background:linear-gradient(135deg,#dc3545,#f06a78)}.toast.info{background:linear-gradient(135deg,#0d6efd,#49a0ff)}
-    .modal{position:fixed;inset:0;background:rgba(9,20,40,.4);display:none;align-items:center;justify-content:center;padding:18px;z-index:999}.modal.show{display:flex}.modal-card{width:min(760px,100%);max-height:92vh;overflow:auto;padding:20px;border-radius:26px;background:#fff;box-shadow:var(--shadow);animation:up .25s ease}
-    .loader{width:18px;height:18px;border:3px solid rgba(255,255,255,.5);border-top-color:#fff;border-radius:50%;display:inline-block;animation:spin 1s linear infinite}
-    @keyframes up{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}} @keyframes slide{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:translateX(0)}} @keyframes spin{to{transform:rotate(360deg)}}
-    @media(max-width:980px){.main{grid-template-columns:1fr}.sidebar{display:none}.stats,.row,.grid-3{grid-template-columns:1fr}.content{padding:14px}}
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SPPD Puskesmas Tanjung Puri</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        tailwind.config = {
+            theme: { extend: { colors: { primary: '#1E3A8A', secondary: '#FBBF24', accent: '#3B82F6', background: '#F3F4F6' } } }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #F3F4F6; }
+        .fade-in { animation: fadeIn 0.4s ease-in-out; }
+        .slide-up { animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 3px; }
+        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #FBBF24; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        /* Style untuk checkbox list pegawai */
+        .checkbox-list-item { display: flex; align-items: center; padding: 8px; border-bottom: 1px solid #eee; cursor: pointer; transition: background 0.2s;}
+        .checkbox-list-item:hover { background: #f8fafc; }
+    </style>
 </head>
-<body>
-<div class="app">
-  <div id="loginView" class="login-wrap">
-    <div class="login-card">
-      <div class="brand">
-        <div class="logo" id="loginLogo">SP</div>
-        <div>
-          <h2>SIM SPPD</h2>
-          <div class="sub">UPTD Puskesmas Tanjung Puri Kabupaten Sintang</div>
+<body class="text-gray-800 overflow-hidden h-screen flex">
+
+    <!-- LOGIN SCREEN -->
+    <div id="login-screen" class="fixed inset-0 bg-primary flex items-center justify-center z-50 transition-opacity duration-500">
+        <div class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md slide-up relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-2 bg-secondary"></div>
+            <div class="text-center mb-8">
+                <div class="bg-blue-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 border-2 border-secondary">
+                    <i class="fas fa-hospital text-primary text-3xl"></i>
+                </div>
+                <h1 class="text-2xl font-bold text-primary">Sistem SPPD</h1>
+                <p class="text-sm text-gray-500">UPTD Puskesmas Tanjung Puri Sintang</p>
+            </div>
+            
+            <form id="login-form" onsubmit="handleLogin(event)">
+                <div class="mb-4 relative">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                    <div class="relative">
+                        <i class="fas fa-user absolute left-3 top-3 text-gray-400"></i>
+                        <input type="text" id="username" class="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-secondary outline-none" placeholder="Masukkan username" required>
+                    </div>
+                </div>
+                <div class="mb-6 relative">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                    <div class="relative">
+                        <i class="fas fa-lock absolute left-3 top-3 text-gray-400"></i>
+                        <input type="password" id="password" class="w-full pl-10 pr-10 py-2 border rounded-lg focus:ring-2 focus:ring-secondary outline-none" placeholder="Masukkan password" required>
+                        <i class="fas fa-eye absolute right-3 top-3 text-gray-400 cursor-pointer hover:text-primary" id="toggle-password" onclick="togglePassword()"></i>
+                    </div>
+                </div>
+                <button type="submit" class="w-full bg-primary hover:bg-blue-900 text-white font-semibold py-2.5 rounded-lg transition duration-300 shadow-lg shadow-blue-500/30">
+                    Masuk <i class="fas fa-arrow-right ml-2"></i>
+                </button>
+            </form>
         </div>
-      </div>
-      <div class="field"><label class="label">Username</label><input id="username" class="input" autocomplete="username"></div>
-      <div class="field"><label class="label">Password</label><div style="display:flex;gap:10px"><input id="password" class="input" type="password" autocomplete="current-password"><button class="btn btn-outline" onclick="togglePassword()">Lihat</button></div></div>
-      <div class="remember">
-        <label><input type="checkbox" id="rememberUser"> Ingat saya untuk username</label>
-        <span class="muted">Role: grand admin / admin</span>
-      </div>
-      <div class="actions" style="margin-top:16px"><button class="btn btn-primary" id="loginBtn" onclick="handleLogin()">Masuk</button><button class="btn btn-outline" onclick="runSetup()">Setup Awal</button></div>
-      <div class="sub" style="margin-top:14px">Login awal: <b>grandadmin</b> / <b>123456</b></div>
     </div>
-  </div>
 
-  <div id="mainView" class="main hidden">
-    <aside class="sidebar">
-      <div class="brand">
-        <div class="logo" id="sideLogo">SP</div>
-        <div>
-          <div style="font-size:18px;font-weight:800">SIM SPPD</div>
-          <div style="font-size:12px;color:#b8c8eb">Modern Web Apps Script</div>
-        </div>
-      </div>
-      <div class="menu">
-        <button class="active" data-menu="dashboard" onclick="showSection('dashboard', this)">Dashboard</button>
-        <button data-menu="pegawai" onclick="showSection('pegawai', this)">Database Pegawai</button>
-        <button data-menu="biaya" onclick="showSection('biaya', this)">Standar Biaya</button>
-        <button data-menu="rekening" onclick="showSection('rekening', this)">Rekening Kegiatan</button>
-        <button data-menu="spd" onclick="showSection('spd', this)">SPD</button>
-        <button data-menu="struktur" onclick="showSection('struktur', this)">Struktur Sheet</button>
-        <button id="adminMenu" data-menu="admin" onclick="showSection('admin', this)">Manajemen Admin</button>
-        <button data-menu="audit" onclick="showSection('audit', this)">Audit Log</button>
-        <button data-menu="settings" onclick="showSection('settings', this)">Pengaturan</button>
-      </div>
-    </aside>
+    <!-- MAIN APP -->
+    <div id="app-screen" class="hidden w-full h-full flex flex-col md:flex-row">
+        <!-- SIDEBAR -->
+        <aside class="w-full md:w-64 bg-primary text-white flex flex-col shadow-xl z-20 h-auto md:h-full transition-all duration-300 hidden md:flex" id="sidebar">
+            <div class="p-5 flex items-center gap-3 border-b border-blue-800">
+                <i class="fas fa-hospital text-secondary text-2xl"></i>
+                <div>
+                    <h2 class="font-bold text-lg leading-tight">SPPD App</h2>
+                    <p class="text-xs text-blue-300">Tanjung Puri</p>
+                </div>
+            </div>
+            
+            <nav class="flex-1 overflow-y-auto py-4">
+                <ul class="space-y-1 px-3">
+                    <li><a href="#" onclick="navigate('dashboard')" class="menu-item active flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-blue-800 text-sm"><i class="fas fa-chart-pie w-5"></i> Dashboard</a></li>
+                    <li class="pt-2 pb-1 px-4 text-xs font-semibold text-blue-300 uppercase">Database</li>
+                    <li><a href="#" onclick="navigate('pegawai')" class="menu-item flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-blue-800 text-sm"><i class="fas fa-users w-5"></i> Pegawai</a></li>
+                    <li class="pt-2 pb-1 px-4 text-xs font-semibold text-blue-300 uppercase">Modul Perjalanan</li>
+                    <li><a href="#" onclick="navigate('spt')" class="menu-item flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-blue-800 text-sm"><i class="fas fa-file-signature w-5"></i> Buat SPT</a></li>
+                    <li><a href="#" onclick="navigate('sppd')" class="menu-item flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-blue-800 text-sm"><i class="fas fa-plane-departure w-5"></i> Kelola SPPD</a></li>
+                    <li><a href="#" onclick="navigate('laporan')" class="menu-item flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-blue-800 text-sm"><i class="fas fa-file-contract w-5"></i> Laporan Hasil</a></li>
+                    <li><a href="#" onclick="navigate('kwitansi')" class="menu-item flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-blue-800 text-sm"><i class="fas fa-file-invoice-dollar w-5"></i> Kwitansi</a></li>
+                    <li class="pt-2 pb-1 px-4 text-xs font-semibold text-blue-300 uppercase">Pengawasan</li>
+                    <li><a href="#" onclick="navigate('monitoring')" class="menu-item flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-blue-800 text-sm"><i class="fas fa-satellite-dish w-5"></i> Monitoring</a></li>
+                </ul>
+            </nav>
+            
+            <div class="p-4 border-t border-blue-800">
+                <button onclick="handleLogout()" class="w-full flex justify-center items-center gap-2 bg-blue-900 hover:bg-red-500 text-white py-2 rounded-lg text-sm transition">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+            </div>
+        </aside>
 
-    <main class="content">
-      <div class="topbar">
-        <div>
-          <h2 id="pageTitle">Dashboard</h2>
-          <div class="welcome">Selamat datang, <b id="whoName"></b> · Role: <b id="whoRole"></b></div>
-        </div>
-        <div class="actions">
-          <button class="btn btn-secondary" onclick="loadAll()">Refresh</button>
-          <button class="btn btn-dark" onclick="handleLogout()">Logout</button>
-        </div>
-      </div>
+        <!-- MAIN CONTENT -->
+        <main class="flex-1 flex flex-col h-full overflow-hidden">
+            <header class="bg-white shadow-sm h-16 flex items-center justify-between px-6 z-10">
+                <div class="flex items-center gap-4">
+                    <button class="md:hidden text-gray-500 hover:text-primary" onclick="document.getElementById('sidebar').classList.toggle('hidden')">
+                        <i class="fas fa-bars text-xl"></i>
+                    </button>
+                    <h2 class="font-semibold text-xl text-gray-800" id="page-title">Dashboard</h2>
+                </div>
+                <div class="flex items-center gap-4">
+                    <span class="text-sm text-gray-500 hidden sm:block"><i class="far fa-calendar-alt mr-1"></i> <span id="current-date"></span></span>
+                </div>
+            </header>
 
-      <section id="dashboard" class="panels section">
-        <div class="stats">
-          <div class="stat"><div class="n" id="statPegawai">0</div><div class="t">Total Pegawai</div></div>
-          <div class="stat"><div class="n" id="statBiaya">0</div><div class="t">Standar Biaya</div></div>
-          <div class="stat"><div class="n" id="statRekening">0</div><div class="t">Rekening Kegiatan</div></div>
-          <div class="stat"><div class="n" id="statSpd">0</div><div class="t">Total SPD</div></div>
-        </div>
-        <div class="panel">
-          <div class="panel-head"><h3>Ringkasan Sistem</h3><span class="badge blue">Aman • Modern • Otomatis</span></div>
-          <div class="grid-3">
-            <div><b>Kontrol login per aksi</b><div class="muted">Setiap simpan data memeriksa sesi login di backend.</div></div>
-            <div><b>Notifikasi modern</b><div class="muted">Semua hasil aksi muncul sebagai toast interaktif.</div></div>
-            <div><b>Siap dikembangkan</b><div class="muted">Mudah ditambah PDF, nomor surat, dan approval.</div></div>
-          </div>
-        </div>
-      </section>
+            <div class="flex-1 overflow-auto p-6 relative">
+                <div id="loading-overlay" class="hidden absolute inset-0 bg-white/80 z-50 flex items-center justify-center rounded-lg backdrop-blur-sm">
+                    <div class="loader"></div>
+                </div>
 
-      <section id="pegawai" class="section hidden">
-        <div class="panel">
-          <div class="panel-head"><h3>Database Pegawai</h3><button class="btn btn-primary" onclick="openEmployeeModal()">Tambah Pegawai</button></div>
-          <div id="pegawaiTable"></div>
-        </div>
-      </section>
+                <!-- 1. Dashboard -->
+                <div id="view-dashboard" class="view-section fade-in">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+                        <div class="bg-white rounded-xl shadow-sm p-6 border-l-4 border-primary hover:shadow-md transition">
+                            <div class="flex justify-between items-start">
+                                <div><p class="text-sm text-gray-500">Total Pegawai</p><h3 class="text-3xl font-bold text-gray-800" id="stat-pegawai">0</h3></div>
+                                <div class="bg-blue-50 p-3 rounded-lg text-primary"><i class="fas fa-users text-xl"></i></div>
+                            </div>
+                        </div>
+                        <div class="bg-white rounded-xl shadow-sm p-6 border-l-4 border-secondary hover:shadow-md transition">
+                            <div class="flex justify-between items-start">
+                                <div><p class="text-sm text-gray-500">Perjalanan Aktif</p><h3 class="text-3xl font-bold text-gray-800" id="stat-aktif">0</h3></div>
+                                <div class="bg-yellow-50 p-3 rounded-lg text-secondary"><i class="fas fa-route text-xl"></i></div>
+                            </div>
+                        </div>
+                        <div class="bg-white rounded-xl shadow-sm p-6 border-l-4 border-green-500 hover:shadow-md transition">
+                            <div class="flex justify-between items-start">
+                                <div><p class="text-sm text-gray-500">SPPD Selesai</p><h3 class="text-3xl font-bold text-gray-800" id="stat-selesai">0</h3></div>
+                                <div class="bg-green-50 p-3 rounded-lg text-green-500"><i class="fas fa-check-circle text-xl"></i></div>
+                            </div>
+                        </div>
+                        <div class="bg-white rounded-xl shadow-sm p-6 border-l-4 border-red-500 hover:shadow-md transition">
+                            <div class="flex justify-between items-start">
+                                <div><p class="text-sm text-gray-500">Pegawai Cuti/Izin</p><h3 class="text-3xl font-bold text-red-600" id="stat-absen"><i class="fas fa-spinner fa-spin text-sm"></i></h3></div>
+                                <div class="bg-red-50 p-3 rounded-lg text-red-500"><i class="fas fa-user-clock text-xl"></i></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-      <section id="biaya" class="section hidden">
-        <div class="panel">
-          <div class="panel-head"><h3>Standar Biaya</h3><button class="btn btn-primary" onclick="openCostModal()">Tambah Biaya</button></div>
-          <div id="biayaTable"></div>
-        </div>
-      </section>
+                <!-- 2. Pegawai -->
+                <div id="view-pegawai" class="view-section hidden fade-in">
+                    <div class="bg-white rounded-xl shadow-sm p-6">
+                        <div class="flex justify-between mb-4">
+                            <select id="filter-status" onchange="renderTablePegawai()" class="border rounded-lg px-3 py-2 text-sm outline-none">
+                                <option value="ALL">Semua Status</option>
+                                <option value="PNS">PNS</option>
+                                <option value="PPPK">PPPK</option>
+                                <option value="PPPK Paruh Waktu">PPPK Paruh Waktu</option>
+                                <option value="Kontrak BLUD">Kontrak BLUD</option>
+                            </select>
+                            <input type="text" id="search-pegawai" onkeyup="renderTablePegawai()" placeholder="Cari nama/NIP..." class="border rounded-lg px-3 py-2 text-sm outline-none">
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse text-sm">
+                                <thead>
+                                    <tr class="bg-gray-50 border-b">
+                                        <th class="p-3">ID QR</th><th class="p-3">Nama Lengkap</th><th class="p-3">NIP / Gol</th>
+                                        <th class="p-3">Jabatan</th><th class="p-3">Status</th><th class="p-3 text-center">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbody-pegawai" class="divide-y"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
 
-      <section id="rekening" class="section hidden">
-        <div class="panel">
-          <div class="panel-head"><h3>Rekening Kegiatan</h3><button class="btn btn-primary" onclick="openAccountModal()">Tambah Rekening</button></div>
-          <div id="rekeningTable"></div>
-        </div>
-      </section>
+                <!-- 3. Buat SPT -->
+                <div id="view-spt" class="view-section hidden fade-in">
+                    <div class="bg-white rounded-xl shadow-sm p-6 max-w-4xl mx-auto border-t-4 border-primary">
+                        <h3 class="text-xl font-bold mb-6 flex items-center gap-2"><i class="fas fa-file-signature text-primary"></i> Form Pembuatan Surat Perintah Tugas</h3>
+                        <form id="form-spt" onsubmit="handleCreateSPT(event)">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
+                                <div><label class="block text-sm font-medium mb-1">Nomor Surat</label><input type="text" id="spt-nomor" required class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary" placeholder="Cth: 400.7/559/Tj-Puri/VI/2025"></div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-1">Sumber Dana</label>
+                                    <select id="spt-sumber-dana-select" onchange="handleDropdownBaru(this, 'spt-sumber-dana')" class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary outline-none">
+                                        <option value="Bantuan Operasional Kesehatan (BOK) DAK Non Fisik Puskesmas Tanjung Puri">Bantuan Operasional Kesehatan (BOK) DAK Non Fisik...</option>
+                                        <option value="Dana Alokasi Umum (DAU) Puskesmas Tanjung Puri">Dana Alokasi Umum (DAU)</option>
+                                        <option value="ADD_NEW" class="font-bold text-primary">+ Tambah Baru...</option>
+                                    </select>
+                                    <input type="hidden" id="spt-sumber-dana" value="Bantuan Operasional Kesehatan (BOK) DAK Non Fisik Puskesmas Tanjung Puri">
+                                </div>
+                                
+                                <div class="col-span-1 md:col-span-2">
+                                    <label class="block text-sm font-medium mb-1">Pilih Pegawai & Pengikut (Bisa Lebih Dari 1)</label>
+                                    <div class="border rounded-lg p-2 bg-gray-50 max-h-48 overflow-y-auto" id="spt-pegawai-list">
+                                        <!-- Dipopulasi JS -->
+                                    </div>
+                                </div>
+                                
+                                <div class="col-span-1 md:col-span-2"><label class="block text-sm font-medium mb-1">Dasar / Pertimbangan</label><textarea id="spt-dasar" required rows="2" class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary" placeholder="Cth: Perlunya Kegiatan Luar Gedung Untuk Menunjang Pelayanan..."></textarea></div>
+                                <div class="col-span-1 md:col-span-2"><label class="block text-sm font-medium mb-1">Tujuan / Maksud Perjalanan Dinas</label><input type="text" id="spt-tujuan" required class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary" placeholder="Cth: Asesment Tingkat Keterampilan Kader..."></div>
+                                
+                                <div><label class="block text-sm font-medium mb-1">Tgl Berangkat</label><input type="date" id="spt-tgl-berangkat" required class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary"></div>
+                                <div><label class="block text-sm font-medium mb-1">Tgl Pulang</label><input type="date" id="spt-tgl-pulang" required class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary"></div>
+                            </div>
+                            <div class="flex justify-end gap-3 border-t pt-4">
+                                <button type="submit" class="px-5 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-blue-900"><i class="fas fa-save"></i> Proses SPT & SPPD</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
 
-      <section id="spd" class="section hidden">
-        <div class="panel">
-          <div class="panel-head"><h3>Transaksi SPD</h3><button class="btn btn-primary" onclick="openSpdModal()">Buat SPD</button></div>
-          <div id="spdTable"></div>
-        </div>
-      </section>
+                <!-- 4. SPPD -->
+                <div id="view-sppd" class="view-section hidden fade-in">
+                    <div class="bg-white rounded-xl shadow-sm p-6">
+                        <h3 class="text-lg font-bold mb-4">Daftar Dokumen SPPD Aktif</h3>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse text-sm">
+                                <thead>
+                                    <tr class="bg-gray-50 border-b">
+                                        <th class="p-3">Ref ID</th><th class="p-3">Pegawai Terdaftar</th><th class="p-3">Tujuan</th>
+                                        <th class="p-3">Tanggal</th><th class="p-3 text-center">Aksi Dokumen</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbody-sppd" class="divide-y"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
 
-      <section id="admin" class="section hidden">
-        <div class="panel">
-          <div class="panel-head"><h3>Manajemen Admin</h3><button class="btn btn-primary" onclick="openAdminModal()">Tambah Admin</button></div>
-          <div id="adminTable"></div>
-        </div>
-      </section>
+                <!-- 5. Laporan -->
+                <div id="view-laporan" class="view-section hidden fade-in">
+                    <div class="bg-white rounded-xl shadow-sm p-6 max-w-4xl mx-auto border-t-4 border-secondary">
+                        <h3 class="text-xl font-bold mb-6 flex items-center gap-2"><i class="fas fa-file-contract text-secondary"></i> Input Laporan Hasil Perjalanan</h3>
+                        <form id="form-laporan" onsubmit="handleLaporan(event)">
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium mb-1">Pilih Perjalanan Dinas Aktif</label>
+                                <select id="lap-sppd" required class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-secondary"></select>
+                            </div>
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium mb-1">Hasil Perjalanan / Catatan Kegiatan</label>
+                                <textarea id="lap-hasil" rows="5" required class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-secondary" placeholder="Uraikan temuan di lapangan secara detail..."></textarea>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                <div>
+                                    <label class="block text-sm font-medium mb-1">Kesimpulan</label>
+                                    <textarea id="lap-kesimpulan" rows="3" required class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-secondary" placeholder="Tuliskan kesimpulan kegiatan..."></textarea>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-1">Saran</label>
+                                    <textarea id="lap-saran" rows="3" required class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-secondary" placeholder="Tuliskan saran tindak lanjut..."></textarea>
+                                </div>
+                            </div>
+                            <div class="flex justify-end pt-2">
+                                <button type="submit" class="px-5 py-2 text-sm font-medium text-gray-800 bg-secondary rounded-lg hover:bg-yellow-500 shadow-md"><i class="fas fa-save"></i> Simpan Laporan</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
 
-      <section id="struktur" class="section hidden">
-        <div class="panel">
-          <div class="panel-head"><h3>Struktur Google Sheet</h3><button class="btn btn-secondary" onclick="loadSheetStructure()">Muat Ulang Struktur</button></div>
-          <div id="structureTable"></div>
-        </div>
-      </section>
+                <!-- 6. Kwitansi -->
+                <div id="view-kwitansi" class="view-section hidden fade-in">
+                    <div class="bg-white rounded-xl shadow-sm p-6 max-w-4xl mx-auto border-t-4 border-green-500">
+                        <h3 class="text-xl font-bold mb-6 flex items-center gap-2"><i class="fas fa-file-invoice-dollar text-green-500"></i> Buat Kwitansi</h3>
+                        <form id="form-kwitansi" onsubmit="handleKwitansi(event)">
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium mb-1">Pilih Dokumen Perjalanan (Status Selesai)</label>
+                                <select id="kwi-sppd" required class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-500"></select>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 bg-green-50 p-4 rounded-lg">
+                                <div>
+                                    <label class="block text-sm font-medium mb-1">Kode Kegiatan</label>
+                                    <select id="kwi-kode-select" onchange="handleDropdownBaru(this, 'kwi-kode')" class="w-full border rounded px-3 py-1.5 text-sm outline-none">
+                                        <option value="1.02.05.2.03.01 / Bimbingan Teknis Dan Supervisi Pengembangan Dan Pelaksanaan Upaya Kesehatan Bersumber Daya Masyarakat (UKBM)">1.02.05.2.03.01 / Bimbingan Teknis Dan Supervisi...</option>
+                                        <option value="ADD_NEW" class="font-bold text-primary">+ Tambah Baru...</option>
+                                    </select>
+                                    <input type="hidden" id="kwi-kode" value="1.02.05.2.03.01 / Bimbingan Teknis Dan Supervisi Pengembangan Dan Pelaksanaan Upaya Kesehatan Bersumber Daya Masyarakat (UKBM)">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-1">Kode Rekening</label>
+                                    <select id="kwi-rek-select" onchange="handleDropdownBaru(this, 'kwi-rek')" class="w-full border rounded px-3 py-1.5 text-sm outline-none">
+                                        <option value="5.1.02.04.01.0003 / Belanja Perjalanan Dinas Dalam Kota">5.1.02.04.01.0003 / Belanja Perjalanan Dinas Dalam Kota</option>
+                                        <option value="ADD_NEW" class="font-bold text-primary">+ Tambah Baru...</option>
+                                    </select>
+                                    <input type="hidden" id="kwi-rek" value="5.1.02.04.01.0003 / Belanja Perjalanan Dinas Dalam Kota">
+                                </div>
+                                <div><label class="block text-sm font-medium mb-1">Nama Bendahara</label><input type="text" id="kwi-bendahara" value="SUKITARINI TRI PUTRI, A.Md.Keb" class="w-full border rounded px-3 py-1.5 text-sm"></div>
+                                <div><label class="block text-sm font-medium mb-1">Nama KPA</label><input type="text" id="kwi-kpa" value="dr. ANDAR JIMMY PINTABAR, M.A.P, M.H.Kes" class="w-full border rounded px-3 py-1.5 text-sm"></div>
+                                <div><label class="block text-sm font-medium mb-1">Nama PPTK</label><input type="text" id="kwi-pptk" value="SRI WAHYUNI, A.Md.Kep" class="w-full border rounded px-3 py-1.5 text-sm"></div>
+                            </div>
+                            
+                            <h4 class="font-semibold mb-2">Rincian Total Biaya (Rp)</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                                <div><label class="block text-xs font-medium mb-1 text-gray-500">Uang Penginapan</label><input type="number" id="kwi-penginapan" onkeyup="kalkulasiKwitansi()" class="w-full border rounded-lg px-4 py-2" value="0"></div>
+                                <div><label class="block text-xs font-medium mb-1 text-gray-500">Uang Makan</label><input type="number" id="kwi-makan" onkeyup="kalkulasiKwitansi()" class="w-full border rounded-lg px-4 py-2" value="0"></div>
+                                <div><label class="block text-xs font-medium mb-1 text-gray-500">Uang Saku</label><input type="number" id="kwi-saku" onkeyup="kalkulasiKwitansi()" class="w-full border rounded-lg px-4 py-2" value="0"></div>
+                                <div><label class="block text-xs font-medium mb-1 text-gray-500">Angkutan Setempat</label><input type="number" id="kwi-angkutan" onkeyup="kalkulasiKwitansi()" class="w-full border rounded-lg px-4 py-2" value="0"></div>
+                                <div><label class="block text-xs font-medium mb-1 text-gray-500">Biaya Transport (PP)</label><input type="number" id="kwi-transport" onkeyup="kalkulasiKwitansi()" class="w-full border rounded-lg px-4 py-2" value="0"></div>
+                            </div>
+                            <div class="mb-6 p-4 bg-gray-50 border rounded-lg">
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="font-bold text-gray-700">Total Pengeluaran:</span>
+                                    <span class="text-2xl font-bold text-green-600" id="kwi-total-display">Rp 0</span>
+                                    <input type="hidden" id="kwi-total-value" value="0">
+                                </div>
+                                <div class="text-right text-xs text-gray-500 italic" id="kwi-terbilang">Nol Rupiah</div>
+                            </div>
+                            <div class="flex justify-end gap-3 pt-2">
+                                <button type="submit" class="px-5 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 shadow-md"><i class="fas fa-print"></i> Simpan & Cetak Kwitansi</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
 
-      <section id="audit" class="section hidden">
-        <div class="panel">
-          <div class="panel-head"><h3>Audit Log</h3><button class="btn btn-secondary" onclick="loadAudit()">Muat Ulang Log</button></div>
-          <div id="auditTable"></div>
-        </div>
-      </section>
+                <!-- 8. Monitoring -->
+                <div id="view-monitoring" class="view-section hidden fade-in">
+                    <div class="bg-white rounded-xl shadow-sm p-6">
+                        <div class="flex justify-between items-center mb-6">
+                            <h3 class="text-lg font-bold">Monitoring Perjalanan Dinas</h3>
+                            <select id="mon-status" onchange="renderMonitoring()" class="border rounded-lg px-3 py-1 text-sm bg-gray-50 outline-none">
+                                <option value="ALL">Semua Status</option>
+                                <option value="Direncanakan">Direncanakan</option>
+                                <option value="Selesai">Selesai</option>
+                            </select>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse text-sm">
+                                <thead>
+                                    <tr class="bg-primary text-white">
+                                        <th class="p-3">Ref ID</th><th class="p-3">Pegawai Terdaftar</th><th class="p-3">Tujuan</th><th class="p-3">Berangkat</th>
+                                        <th class="p-3">Kembali</th><th class="p-3">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbody-monitoring" class="divide-y bg-white border-b border-l border-r"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
 
-      <section id="settings" class="section hidden">
-        <div class="panel">
-          <div class="panel-head"><h3>Pengaturan Aplikasi</h3><span class="badge yellow">Warna & Logo</span></div>
-          <div class="row">
-            <div class="field"><label class="label">URL Logo</label><input id="logoUrl" class="input" placeholder="https://..."></div>
-            <div class="field"><label class="label">Warna Primer</label><input id="primaryColor" class="input" type="color" value="#0d6efd"></div>
-          </div>
-          <div class="row">
-            <div class="field"><label class="label">Warna Sekunder</label><input id="secondaryColor" class="input" type="color" value="#ffc107"></div>
-            <div class="field"><label class="label">Preview</label><div class="panel" style="padding:14px"><span class="badge blue">Header & Footer Profesional</span><div class="muted" style="margin-top:8px">Perubahan warna diterapkan langsung ke UI.</div></div></div>
-          </div>
-          <div class="actions"><button class="btn btn-primary" onclick="saveSettings()">Simpan Pengaturan</button></div>
-        </div>
-      </section>
-      <footer>SIM SPPD · UPTD Puskesmas Tanjung Puri Kabupaten Sintang</footer>
-    </main>
-  </div>
-</div>
-
-<div id="modal" class="modal"><div class="modal-card" id="modalBody"></div></div>
-<div id="toasts" class="toast-wrap"></div>
-
-<script>
-const state = { token:'', session:null, app:null, bootstrap:null };
-
-window.onload = () => {
-  const remembered = localStorage.getItem('remember_username') || '';
-  if (remembered) { document.getElementById('username').value = remembered; document.getElementById('rememberUser').checked = true; }
-  const token = sessionStorage.getItem('sppd_token') || '';
-  if (token) {
-    state.token = token;
-    server('checkSession', token).then(res => {
-      if (res.ok) {
-        state.session = res.session; state.app = res.app; enterApp(); loadAll();
-      } else sessionStorage.removeItem('sppd_token');
-    }).catch(()=>sessionStorage.removeItem('sppd_token'));
-  }
-};
-
-function server(fn, ...args){
-  return new Promise((resolve,reject)=>{
-    google.script.run.withSuccessHandler(resolve).withFailureHandler(err=>reject(err))[fn](...args);
-  });
-}
-
-function togglePassword(){
-  const el = document.getElementById('password');
-  el.type = el.type === 'password' ? 'text' : 'password';
-}
-
-async function runSetup(){
-  showLoading('Menyiapkan sheet awal...');
-  try{
-    const res = await server('initialSetup');
-    toast(res.message || 'Setup selesai','success');
-  }catch(e){ toast(readErr(e),'error'); }
-  hideLoading();
-}
-
-async function handleLogin(){
-  const username = val('username');
-  const password = val('password');
-  if (!username || !password) return toast('Username dan password wajib diisi.','error');
-  setBtnLoading('loginBtn', true, 'Masuk');
-  try{
-    const res = await server('login', { username, password });
-    if (!res.ok) return toast(res.message,'error');
-    if (document.getElementById('rememberUser').checked) localStorage.setItem('remember_username', username); else localStorage.removeItem('remember_username');
-    state.token = res.session.token; state.session = res.session;
-    sessionStorage.setItem('sppd_token', state.token);
-    enterApp(); toast('Login berhasil.','success');
-    await loadAll();
-  }catch(e){ toast(readErr(e),'error'); }
-  setBtnLoading('loginBtn', false, 'Masuk');
-}
-
-async function handleLogout(){
-  try{ await server('logout', state.token); }catch(e){}
-  sessionStorage.removeItem('sppd_token');
-  state.token=''; state.session=null;
-  document.getElementById('mainView').classList.add('hidden');
-  document.getElementById('loginView').classList.remove('hidden');
-  toast('Anda telah logout.','info');
-}
-
-function enterApp(){
-  document.getElementById('loginView').classList.add('hidden');
-  document.getElementById('mainView').classList.remove('hidden');
-  document.getElementById('whoName').textContent = state.session.name;
-  document.getElementById('whoRole').textContent = state.session.role;
-  document.getElementById('adminMenu').style.display = state.session.role === 'grand_admin' ? 'block' : 'none';
-}
-
-async function loadAll(){
-  showLoading('Memuat data aplikasi...');
-  try{
-    const res = await server('getBootstrapData', state.token);
-    if (!res.ok) return kick(res.message);
-    state.bootstrap = res; state.app = res.app;
-    applyTheme(); fillStats(res.stats);
-    renderEmployees(res.employees || []);
-    renderCosts(res.costs || []);
-    renderAccounts(res.accounts || []);
-    renderSpd(res.spd || []);
-    renderAdmins(res.admins || []);
-    renderSheetStructure(res.sheetStructure || []);
-    fillSettings();
-    loadAudit();
-  }catch(e){ kick(readErr(e)); }
-  hideLoading();
-}
-
-async function loadSheetStructure(){
-  try{
-    const res = await server('inspectSpreadsheetStructure', state.token);
-    if (!res.ok) return kick(res.message);
-    renderSheetStructure(res.data || []);
-    toast('Struktur sheet berhasil diperbarui.','success');
-  }catch(e){ actionError(e); }
-}
-
-async function loadAudit(){
-  try{
-    const res = await server('getAuditLogs', state.token);
-    if (!res.ok) return kick(res.message);
-    renderAudit(res.data || []);
-  }catch(e){ toast(readErr(e),'error'); }
-}
-
-function fillStats(s){
-  setText('statPegawai', s.totalPegawai||0); setText('statBiaya', s.totalBiaya||0); setText('statRekening', s.totalRekening||0); setText('statSpd', s.totalSpd||0);
-}
-function fillSettings(){
-  if (!state.app) return;
-  document.getElementById('logoUrl').value = state.app.logoUrl || '';
-  document.getElementById('primaryColor').value = state.app.primaryColor || '#0d6efd';
-  document.getElementById('secondaryColor').value = state.app.secondaryColor || '#ffc107';
-}
-function applyTheme(){
-  const a = state.app || {};
-  document.documentElement.style.setProperty('--primary', a.primaryColor || '#0d6efd');
-  document.documentElement.style.setProperty('--secondary', a.secondaryColor || '#ffc107');
-  setLogo('loginLogo', a.logoUrl); setLogo('sideLogo', a.logoUrl);
-}
-function setLogo(id, url){
-  const box = document.getElementById(id); if (!box) return;
-  box.innerHTML = url ? `<img src="${escapeHtml(url)}" alt="logo">` : 'SP';
-}
-
-function showSection(id, btn){
-  document.querySelectorAll('.section').forEach(x=>x.classList.add('hidden'));
-  document.getElementById(id).classList.remove('hidden');
-  document.querySelectorAll('.menu button').forEach(b=>b.classList.remove('active'));
-  if (btn) btn.classList.add('active');
-  setText('pageTitle', btn ? btn.textContent : 'Dashboard');
-}
-
-function openModal(html){ document.getElementById('modalBody').innerHTML = html; document.getElementById('modal').classList.add('show'); }
-function closeModal(){ document.getElementById('modal').classList.remove('show'); document.getElementById('modalBody').innerHTML=''; }
-
-function openEmployeeModal(data={}){
-  openModal(`
-    <div class="panel-head"><h3>${data.ID?'Edit':'Tambah'} Pegawai</h3><button class="btn btn-outline" onclick="closeModal()">Tutup</button></div>
-    <div class="row">
-      <div class="field"><label class="label">NIP</label><input id="m_nip" class="input" value="${esc(data.NIP)}"></div>
-      <div class="field"><label class="label">Nama</label><input id="m_nama" class="input" value="${esc(data.NAMA)}"></div>
+            </div>
+        </main>
     </div>
-    <div class="row">
-      <div class="field"><label class="label">Jabatan</label><input id="m_jabatan" class="input" value="${esc(data.JABATAN)}"></div>
-      <div class="field"><label class="label">Pangkat/Gol</label><input id="m_pangkat" class="input" value="${esc(data.PANGKAT_GOL)}"></div>
-    </div>
-    <div class="row">
-      <div class="field"><label class="label">Unit Kerja</label><input id="m_unit" class="input" value="${esc(data.UNIT_KERJA)}"></div>
-      <div class="field"><label class="label">Maks perjalanan per hari</label><input id="m_max" class="input" type="number" min="1" value="${esc(data.MAX_PER_DAY||1)}"></div>
-    </div>
-    <div class="actions"><button class="btn btn-primary" onclick='saveEmployee(${JSON.stringify(data.ID||'')})'>Simpan</button></div>
-  `);
-}
-async function saveEmployee(id){
-  try{
-    const res = await server('saveEmployee', state.token, { id, nip:val('m_nip'), nama:val('m_nama'), jabatan:val('m_jabatan'), pangkat:val('m_pangkat'), unitKerja:val('m_unit'), maxPerDay:val('m_max') });
-    if (!res.ok) return toast(res.message,'error');
-    toast(res.message,'success'); closeModal(); loadAll();
-  }catch(e){ actionError(e); }
-}
 
-function openCostModal(data={}){
-  openModal(`
-    <div class="panel-head"><h3>${data.ID?'Edit':'Tambah'} Standar Biaya</h3><button class="btn btn-outline" onclick="closeModal()">Tutup</button></div>
-    <div class="row">
-      <div class="field"><label class="label">Kategori</label><input id="c_kategori" class="input" value="${esc(data.KATEGORI)}"></div>
-      <div class="field"><label class="label">Subkategori</label><input id="c_subkategori" class="input" value="${esc(data.SUBKATEGORI)}"></div>
-    </div>
-    <div class="row">
-      <div class="field"><label class="label">Tujuan</label><input id="c_tujuan" class="input" value="${esc(data.TUJUAN)}"></div>
-      <div class="field"><label class="label">Satuan</label><input id="c_satuan" class="input" value="${esc(data.SATUAN)}"></div>
-    </div>
-    <div class="row">
-      <div class="field"><label class="label">Nilai</label><input id="c_nilai" class="input" type="number" value="${esc(data.NILAI||0)}"></div>
-      <div class="field"><label class="label">Keterangan</label><input id="c_keterangan" class="input" value="${esc(data.KETERANGAN)}"></div>
-    </div>
-    <div class="actions"><button class="btn btn-primary" onclick='saveCost(${JSON.stringify(data.ID||'')})'>Simpan</button></div>
-  `);
-}
-async function saveCost(id){
-  try{
-    const res = await server('saveCost', state.token, { id, kategori:val('c_kategori'), subkategori:val('c_subkategori'), tujuan:val('c_tujuan'), satuan:val('c_satuan'), nilai:val('c_nilai'), keterangan:val('c_keterangan') });
-    if (!res.ok) return toast(res.message,'error');
-    toast(res.message,'success'); closeModal(); loadAll();
-  }catch(e){ actionError(e); }
-}
+    <!-- MAIN JAVASCRIPT LOGIC -->
+    <script>
+        let dbPegawai = [];
+        let dbSppd = [];
+        let dbLaporan = []; // Lokal state untuk teks laporan agar bisa di print
 
-function openAccountModal(data={}){
-  openModal(`
-    <div class="panel-head"><h3>${data.ID?'Edit':'Tambah'} Rekening Kegiatan</h3><button class="btn btn-outline" onclick="closeModal()">Tutup</button></div>
-    <div class="row">
-      <div class="field"><label class="label">Kode Kegiatan</label><input id="a_kegiatan" class="input" value="${esc(data.KODE_KEGIATAN)}"></div>
-      <div class="field"><label class="label">Nama Kegiatan</label><input id="a_nama_kegiatan" class="input" value="${esc(data.NAMA_KEGIATAN)}"></div>
-    </div>
-    <div class="row">
-      <div class="field"><label class="label">Kode Sub Kegiatan</label><input id="a_subkode" class="input" value="${esc(data.KODE_SUB_KEGIATAN)}"></div>
-      <div class="field"><label class="label">Nama Sub Kegiatan</label><input id="a_subnama" class="input" value="${esc(data.NAMA_SUB_KEGIATAN)}"></div>
-    </div>
-    <div class="row">
-      <div class="field"><label class="label">Kode Rekening</label><input id="a_rekening" class="input" value="${esc(data.KODE_REKENING)}"></div>
-      <div class="field"><label class="label">Nama Rekening</label><input id="a_nama_rekening" class="input" value="${esc(data.NAMA_REKENING)}"></div>
-    </div>
-    <div class="actions"><button class="btn btn-primary" onclick='saveAccount(${JSON.stringify(data.ID||'')})'>Simpan</button></div>
-  `);
-}
-async function saveAccount(id){
-  try{
-    const res = await server('saveAccount', state.token, { id, kodeKegiatan:val('a_kegiatan'), namaKegiatan:val('a_nama_kegiatan'), kodeSubKegiatan:val('a_subkode'), namaSubKegiatan:val('a_subnama'), kodeRekening:val('a_rekening'), namaRekening:val('a_nama_rekening') });
-    if (!res.ok) return toast(res.message,'error');
-    toast(res.message,'success'); closeModal(); loadAll();
-  }catch(e){ actionError(e); }
-}
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('current-date').innerText = formatTanggalIndo(new Date().toISOString().split('T')[0]);
+        });
 
-function openSpdModal(data={}){
-  const pegawaiOptions = (state.bootstrap?.employees || []).map(x=>`<option value="${esc(x.ID)}" ${x.ID===data.PEGAWAI_ID?'selected':''}>${esc(x.NAMA)} (${esc(x.NIP)})</option>`).join('');
-  const akun = state.bootstrap?.accounts || [];
-  const kegiatan = [...new Set(akun.map(x=>x.NAMA_KEGIATAN).filter(Boolean))].map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join('');
-  const sub = [...new Set(akun.map(x=>x.NAMA_SUB_KEGIATAN).filter(Boolean))].map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join('');
-  openModal(`
-    <div class="panel-head"><h3>${data.ID?'Edit':'Buat'} SPD</h3><button class="btn btn-outline" onclick="closeModal()">Tutup</button></div>
-    <div class="row">
-      <div class="field"><label class="label">Pegawai</label><select id="s_pegawai"><option value="">Pilih pegawai</option>${pegawaiOptions}</select></div>
-      <div class="field"><label class="label">Tujuan</label><input id="s_tujuan" class="input" value="${esc(data.TUJUAN)}"></div>
-    </div>
-    <div class="row">
-      <div class="field"><label class="label">Tanggal Berangkat</label><input id="s_berangkat" class="input" type="date" value="${esc(data.TGL_BERANGKAT)}"></div>
-      <div class="field"><label class="label">Tanggal Pulang</label><input id="s_pulang" class="input" type="date" value="${esc(data.TGL_PULANG)}"></div>
-    </div>
-    <div class="row">
-      <div class="field"><label class="label">Kegiatan</label><input list="kegiatanList" id="s_kegiatan" class="input" value="${esc(data.KEGIATAN)}"><datalist id="kegiatanList">${kegiatan}</datalist></div>
-      <div class="field"><label class="label">Sub Kegiatan</label><input list="subList" id="s_sub" class="input" value="${esc(data.SUB_KEGIATAN)}"><datalist id="subList">${sub}</datalist></div>
-    </div>
-    <div class="field"><label class="label">Keperluan</label><textarea id="s_keperluan" class="input">${esc(data.KEPERLUAN)}</textarea></div>
-    <div class="actions"><button class="btn btn-primary" onclick='saveSpd(${JSON.stringify(data.ID||'')})'>Simpan SPD</button></div>
-  `);
-}
-async function saveSpd(id){
-  try{
-    const res = await server('saveSpd', state.token, { id, pegawaiId:val('s_pegawai'), tujuan:val('s_tujuan'), tglBerangkat:val('s_berangkat'), tglPulang:val('s_pulang'), kegiatan:val('s_kegiatan'), subKegiatan:val('s_sub'), keperluan:val('s_keperluan') });
-    if (!res.ok) return toast(res.message,'error');
-    toast(`${res.message} No SPD: ${res.noSpd||'-'}`,'success'); closeModal(); loadAll();
-  }catch(e){ actionError(e); }
-}
+        const showLoading = () => document.getElementById('loading-overlay').classList.remove('hidden');
+        const hideLoading = () => document.getElementById('loading-overlay').classList.add('hidden');
 
-function openAdminModal(){
-  if (state.session?.role !== 'grand_admin') return toast('Hanya grand admin yang bisa menambah admin.','error');
-  openModal(`
-    <div class="panel-head"><h3>Tambah Admin Baru</h3><button class="btn btn-outline" onclick="closeModal()">Tutup</button></div>
-    <div class="field"><label class="label">Nama</label><input id="u_name" class="input"></div>
-    <div class="row">
-      <div class="field"><label class="label">Username</label><input id="u_username" class="input"></div>
-      <div class="field"><label class="label">Password</label><input id="u_password" class="input" type="password"></div>
-    </div>
-    <div class="actions"><button class="btn btn-primary" onclick="saveAdmin()">Simpan Admin</button></div>
-  `);
-}
-async function saveAdmin(){
-  try{
-    const res = await server('createAdmin', state.token, { name:val('u_name'), username:val('u_username'), password:val('u_password') });
-    if (!res.ok) return toast(res.message,'error');
-    toast(res.message,'success'); closeModal(); loadAll();
-  }catch(e){ actionError(e); }
-}
+        function togglePassword() {
+            const pwd = document.getElementById('password');
+            const icon = document.getElementById('toggle-password');
+            if (pwd.type === 'password') { pwd.type = 'text'; icon.className = "fas fa-eye-slash absolute right-3 top-3 text-gray-400 cursor-pointer"; } 
+            else { pwd.type = 'password'; icon.className = "fas fa-eye absolute right-3 top-3 text-gray-400 cursor-pointer hover:text-primary"; }
+        }
 
-async function saveSettings(){
-  try{
-    const res = await server('updateAppSettings', state.token, { logoUrl:val('logoUrl'), primaryColor:val('primaryColor'), secondaryColor:val('secondaryColor') });
-    if (!res.ok) return toast(res.message,'error');
-    state.app = res.app; applyTheme(); toast(res.message,'success');
-  }catch(e){ actionError(e); }
-}
+        // FUNGSI FORMAT TANGGAL INDO (DD MMMM YYYY)
+        function formatTanggalIndo(dateStr) {
+            if(!dateStr) return '';
+            try {
+                const parts = dateStr.split('-');
+                if(parts.length !== 3) return dateStr;
+                const year = parts[0];
+                const monthIdx = parseInt(parts[1]) - 1;
+                const day = parseInt(parts[2]);
+                const months = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+                return `${day} ${months[monthIdx]} ${year}`;
+            } catch(e) {
+                return dateStr;
+            }
+        }
 
-function renderEmployees(rows){ renderTable('pegawaiTable', ['NIP','Nama','Jabatan','Unit Kerja','Maks/Hari','Total PD','Aksi'], rows.map(r=>[r.NIP,r.NAMA,r.JABATAN,r.UNIT_KERJA,badge('blue',r.MAX_PER_DAY||1),badge('green',r.TOTAL_PERJALANAN||0),`<button class="btn btn-outline" onclick='openEmployeeModal(${JSON.stringify(r)})'>Edit</button>`])); }
-function renderCosts(rows){ renderTable('biayaTable', ['Kategori','Subkategori','Tujuan','Satuan','Nilai','Aksi'], rows.map(r=>[r.KATEGORI,r.SUBKATEGORI,r.TUJUAN,r.SATUAN,formatRupiah(r.NILAI),`<button class="btn btn-outline" onclick='openCostModal(${JSON.stringify(r)})'>Edit</button>`])); }
-function renderAccounts(rows){ renderTable('rekeningTable', ['Kode Kegiatan','Nama Kegiatan','Kode Rekening','Nama Rekening','Aksi'], rows.map(r=>[r.KODE_KEGIATAN,r.NAMA_KEGIATAN,r.KODE_REKENING,r.NAMA_REKENING,`<button class="btn btn-outline" onclick='openAccountModal(${JSON.stringify(r)})'>Edit</button>`])); }
-function renderSpd(rows){ renderTable('spdTable', ['No SPD','Pegawai','Tgl Berangkat','Tgl Pulang','Tujuan','Status','Aksi'], rows.map(r=>[r.NO_SPD,r.NAMA_PEGAWAI,r.TGL_BERANGKAT,r.TGL_PULANG,r.TUJUAN,badge('yellow',r.STATUS||'Draft'),`<button class="btn btn-outline" onclick='openSpdModal(${JSON.stringify(r)})'>Edit</button>`])); }
-function renderAdmins(rows){ renderTable('adminTable', ['Username','Nama','Role','Status'], rows.map(r=>[r.USERNAME,r.NAMA,badge('blue',r.ROLE),badge(r.ACTIVE==='Y'?'green':'yellow',r.ACTIVE==='Y'?'Aktif':'Nonaktif')])); }
-function renderAudit(rows){ renderTable('auditTable', ['Waktu','Username','Aksi','Detail','Status'], rows.map(r=>[fmtDateTime(r.TIMESTAMP),r.USERNAME,r.ACTION,r.DETAIL,badge(r.STATUS==='SUCCESS'?'green':'yellow',r.STATUS)])); }
-function renderSheetStructure(rows){
-  renderTable('structureTable', ['Sheet','Jumlah Data','Jumlah Kolom','Daftar Kolom'], rows.map(r=>[
-    badge('blue', r.sheetName || '-'),
-    r.totalRows || 0,
-    r.totalColumns || 0,
-    `<div class="muted">${(r.columns || []).map(escapeHtml).join(' • ') || '-'}</div>`
-  ]));
-}
+        // FUNGSI GENERATE NOMOR SURAT SPT OTOMATIS
+        function generateNomorSPT() {
+            const d = new Date();
+            const romawi = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII"];
+            const month = romawi[d.getMonth()];
+            const year = d.getFullYear();
+            const randomSeq = Math.floor(Math.random() * 900) + 100; // Generate no acak 3 digit sebagai placeholder sementara
+            return `400.7/${randomSeq}/Tj-Puri/${month}/${year}`;
+        }
 
-function renderTable(target, headers, rows){
-  const html = `<div class="table-wrap"><table class="table"><thead><tr>${headers.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${rows.length?rows.map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join('')}</tr>`).join(''):`<tr><td colspan="${headers.length}" class="muted">Belum ada data.</td></tr>`}</tbody></table></div>`;
-  document.getElementById(target).innerHTML = html;
-}
+        // FUNGSI ADD NEW DROPDOWN (SUMBER DANA DLL)
+        window.handleDropdownBaru = function(sel, hiddenId) {
+            if(sel.value === 'ADD_NEW') {
+                Swal.fire({
+                    title: 'Tambah Item Baru',
+                    input: 'text',
+                    inputPlaceholder: 'Ketik nama item baru di sini...',
+                    showCancelButton: true,
+                    confirmButtonText: 'Simpan',
+                    cancelButtonText: 'Batal'
+                }).then((result) => {
+                    if(result.isConfirmed && result.value) {
+                        const newVal = result.value;
+                        const opt = new Option(newVal, newVal);
+                        // Insert sebelum opsi ADD_NEW
+                        sel.add(opt, sel.options[sel.options.length - 1]);
+                        sel.value = newVal;
+                        document.getElementById(hiddenId).value = newVal;
+                        // Catatan: Ini tersimpan sementara di UI. Untuk permanen perlu disimpan via google.script.run ke sheet
+                        Swal.fire('Tersimpan di Sesi Ini', 'Item ditambahkan ke daftar dropdown.', 'success');
+                    } else {
+                        sel.selectedIndex = 0; // Kembalikan ke pilihan pertama
+                        document.getElementById(hiddenId).value = sel.value;
+                    }
+                });
+            } else {
+                document.getElementById(hiddenId).value = sel.value;
+            }
+        }
 
-function toast(msg, type='info'){
-  const el = document.createElement('div'); el.className = `toast ${type}`; el.innerHTML = `<div style="font-weight:800;margin-bottom:4px">${type==='success'?'Berhasil':type==='error'?'Gagal':'Informasi'}</div><div>${escapeHtml(msg)}</div>`;
-  document.getElementById('toasts').appendChild(el); setTimeout(()=>el.remove(), 3600);
-}
-function showLoading(msg){ const m=document.getElementById('toasts'); const el=document.createElement('div'); el.id='loadingToast'; el.className='toast info'; el.innerHTML=`<div style="display:flex;align-items:center;gap:10px"><span class="loader"></span><div>${escapeHtml(msg||'Memproses...')}</div></div>`; const old=document.getElementById('loadingToast'); if(old) old.remove(); m.appendChild(el); }
-function hideLoading(){ const old=document.getElementById('loadingToast'); if(old) old.remove(); }
-function setBtnLoading(id, isLoading, txt){ const b=document.getElementById(id); if(!b) return; b.disabled=isLoading; b.innerHTML=isLoading?`<span class="loader"></span>`:txt; }
-function readErr(e){ return (e && e.message) ? e.message : String(e || 'Terjadi kesalahan.'); }
-function actionError(e){ const msg=readErr(e); if(msg.toLowerCase().includes('sesi')) return kick(msg); toast(msg,'error'); }
-function kick(msg){ toast(msg || 'Sesi berakhir. Silakan login kembali.','error'); handleLogout(); }
-function val(id){ return (document.getElementById(id)?.value || '').trim(); }
-function setText(id, txt){ const el=document.getElementById(id); if(el) el.textContent=txt; }
-function esc(v){ return String(v||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-function escapeHtml(v){ return esc(v); }
-function badge(type, text){ return `<span class="badge ${type}">${escapeHtml(String(text))}</span>`; }
-function formatRupiah(n){ const x = Number(n||0); return new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(x); }
-function fmtDateTime(v){ if(!v) return ''; try{ return new Date(v).toLocaleString('id-ID'); }catch(e){ return v; } }
-</script>
+        // FUNGSI ANGKA KE HURUF
+        function terbilang(angka) {
+            var bilne = ["", "satu", "dua", "tiga", "empat", "lima", "enam", "tujuh", "delapan", "sembilan", "sepuluh", "sebelas"];
+            if (angka < 12) return bilne[angka];
+            else if (angka < 20) return terbilang(angka - 10) + " belas";
+            else if (angka < 100) return terbilang(Math.floor(angka / 10)) + " puluh " + terbilang(angka % 10);
+            else if (angka < 200) return "seratus " + terbilang(angka - 100);
+            else if (angka < 1000) return terbilang(Math.floor(angka / 100)) + " ratus " + terbilang(angka % 100);
+            else if (angka < 2000) return "seribu " + terbilang(angka - 1000);
+            else if (angka < 1000000) return terbilang(Math.floor(angka / 1000)) + " ribu " + terbilang(angka % 1000);
+            else if (angka < 1000000000) return terbilang(Math.floor(angka / 1000000)) + " juta " + terbilang(angka % 1000000);
+            return "";
+        }
+
+        function getParsedDetail(s) {
+            let detail = { tujuan: s.tujuan, nomor: '-', dasar: '-', dana: '-', pegawais: [{id_qr: s.id_qr, nama: s.nama}] };
+            try { let parsed = JSON.parse(s.tujuan); if (parsed && parsed.tujuan) detail = parsed; } catch(e) {}
+            return detail;
+        }
+
+        function handleLogin(e) {
+            e.preventDefault();
+            if (typeof google !== 'undefined') {
+                showLoading();
+                google.script.run.withSuccessHandler(resStr => {
+                    let res = JSON.parse(resStr);
+                    hideLoading();
+                    if(res.status === 'success') {
+                        dbPegawai = res.pegawai; dbSppd = res.sppd;
+                        Swal.fire({ icon: 'success', title: 'Login Berhasil', timer: 1500, showConfirmButton: false }).then(() => {
+                            document.getElementById('login-screen').classList.add('hidden');
+                            document.getElementById('app-screen').classList.remove('hidden');
+                            initDashboard();
+                        });
+                    } else { Swal.fire('Error', res.message, 'error'); }
+                }).withFailureHandler(err => { hideLoading(); Swal.fire('Error', err.message, 'error'); }).getInitData();
+            } else {
+                Swal.fire('Info', 'Harap jalankan aplikasi ini via Google Apps Script Deployment.', 'warning');
+            }
+        }
+
+        function handleLogout() {
+            Swal.fire({ title: 'Keluar aplikasi?', icon: 'warning', showCancelButton: true, confirmButtonText: 'Ya' }).then((res) => {
+                if (res.isConfirmed) {
+                    document.getElementById('app-screen').classList.add('hidden');
+                    document.getElementById('login-screen').classList.remove('hidden');
+                    dbPegawai = []; dbSppd = []; dbLaporan = [];
+                }
+            });
+        }
+
+        function navigate(viewId) {
+            document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('bg-blue-800', 'text-secondary', 'border-l-4', 'border-secondary'));
+            event.currentTarget.classList.add('bg-blue-800', 'text-secondary', 'border-l-4', 'border-secondary');
+            document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
+            document.getElementById('view-' + viewId).classList.remove('hidden');
+
+            const titles = { 'dashboard':'Dashboard', 'pegawai':'Database Pegawai', 'spt':'Buat SPPD', 'sppd':'Manajemen SPPD', 'laporan':'Laporan Hasil', 'kwitansi':'Manajemen Kwitansi', 'monitoring':'Monitoring' };
+            document.getElementById('page-title').innerText = titles[viewId];
+
+            if(viewId === 'dashboard') initDashboard();
+            if(viewId === 'pegawai') renderTablePegawai();
+            if(viewId === 'spt') { 
+                populateCheckboxPegawai(); 
+                document.getElementById('spt-nomor').value = generateNomorSPT(); // Auto-fill Nomor Surat
+            }
+            if(viewId === 'sppd') renderSppd();
+            if(viewId === 'monitoring') renderMonitoring();
+            if(viewId === 'laporan') populateSelectsSPPD('lap-sppd', dbSppd.filter(s=>s.status!=='Selesai'));
+            if(viewId === 'kwitansi') populateSelectsSPPD('kwi-sppd', dbSppd.filter(s=>s.status==='Selesai'));
+        }
+
+        function populateSelectsSPPD(elementId, dataArray) {
+            const select = document.getElementById(elementId);
+            select.innerHTML = '<option value="">-- Silahkan Pilih Dokumen SPPD --</option>';
+            dataArray.forEach(item => {
+                let det = getParsedDetail(item);
+                let namas = det.pegawais.map(p=>p.nama).join(', ');
+                select.innerHTML += `<option value="${item.id}">${item.id} - ${det.tujuan} (${namas})</option>`;
+            });
+        }
+
+        function populateCheckboxPegawai() {
+            const list = document.getElementById('spt-pegawai-list');
+            list.innerHTML = '';
+            dbPegawai.forEach(p => {
+                list.innerHTML += `
+                    <label class="checkbox-list-item">
+                        <input type="checkbox" name="chk_pegawai" value="${p.id_qr}" class="mr-3 w-4 h-4 text-primary">
+                        <div class="text-sm">
+                            <span class="font-bold">${p.nama}</span> <span class="text-gray-500">(${p.jabatan})</span>
+                        </div>
+                    </label>
+                `;
+            });
+        }
+
+        function initDashboard() {
+            document.getElementById('stat-pegawai').innerText = dbPegawai.length;
+            document.getElementById('stat-aktif').innerText = dbSppd.filter(s => s.status !== 'Selesai').length;
+            document.getElementById('stat-selesai').innerText = dbSppd.filter(s => s.status === 'Selesai').length;
+            if (typeof google !== 'undefined') {
+                google.script.run.withSuccessHandler(resStr => {
+                    let res = JSON.parse(resStr);
+                    if (res.status === 'success') document.getElementById('stat-absen').innerText = res.count;
+                }).getAbsensiHariIni();
+            }
+        }
+
+        // --- MODULE PEGAWAI ---
+        function renderTablePegawai() {
+            const tbody = document.getElementById('tbody-pegawai');
+            const filter = document.getElementById('filter-status').value;
+            const search = document.getElementById('search-pegawai').value.toLowerCase();
+            
+            tbody.innerHTML = '';
+            let filtered = dbPegawai.filter(p => (filter === 'ALL' || p.status === filter) && (p.nama.toLowerCase().includes(search) || p.nip.toLowerCase().includes(search)));
+
+            filtered.forEach(p => {
+                let statusColor = p.status === 'PNS' ? 'bg-blue-100 text-blue-700' : p.status === 'PPPK' ? 'bg-green-100 text-green-700' : 'bg-gray-100';
+                tbody.innerHTML += `
+                    <tr class="hover:bg-gray-50">
+                        <td class="p-3 text-gray-500 font-mono text-xs">${p.id_qr}</td>
+                        <td class="p-3 font-medium">${p.nama}</td>
+                        <td class="p-3 text-gray-600">${p.nip}</td>
+                        <td class="p-3 text-gray-600">${p.jabatan}</td>
+                        <td class="p-3"><span class="px-2 py-1 rounded text-xs font-semibold ${statusColor}">${p.status}</span></td>
+                        <td class="p-3 text-center">
+                            <button onclick="lihatPegawai('${p.id_qr}')" class="text-blue-500 hover:text-blue-700 p-2 bg-blue-50 rounded-full transition"><i class="fas fa-eye"></i></button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        window.lihatPegawai = function(id_qr) {
+            let p = dbPegawai.find(x => x.id_qr === id_qr);
+            if(p) {
+                Swal.fire({
+                    title: 'Detail Pegawai',
+                    html: `
+                        <div class="text-left text-sm space-y-3 mt-4">
+                            <div class="bg-gray-50 p-3 rounded border"><span class="text-gray-500 text-xs block">ID / Barcode</span><b>${p.id_qr}</b></div>
+                            <div class="bg-gray-50 p-3 rounded border"><span class="text-gray-500 text-xs block">Nama Lengkap</span><b>${p.nama}</b></div>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div class="bg-gray-50 p-3 rounded border"><span class="text-gray-500 text-xs block">NIP</span><b>${p.nip}</b></div>
+                                <div class="bg-gray-50 p-3 rounded border"><span class="text-gray-500 text-xs block">Pangkat / Gol</span><b>${p.pangkat}</b></div>
+                            </div>
+                            <div class="bg-gray-50 p-3 rounded border"><span class="text-gray-500 text-xs block">Jabatan</span><b>${p.jabatan}</b></div>
+                        </div>
+                    `, icon: 'info', confirmButtonColor: '#1E3A8A'
+                });
+            }
+        };
+
+        // --- MODULE SPT / SPPD ---
+        function handleCreateSPT(e) {
+            e.preventDefault();
+            const chk = document.querySelectorAll('input[name="chk_pegawai"]:checked');
+            if(chk.length === 0) return Swal.fire('Peringatan', 'Pilih minimal 1 pegawai untuk diberangkatkan.', 'warning');
+            
+            const selectedPegawais = Array.from(chk).map(c => dbPegawai.find(p => p.id_qr === c.value));
+            const utama = selectedPegawais[0]; // Jadikan yang pertama sebagai perwakilan row
+            
+            const nomor = document.getElementById('spt-nomor').value;
+            const dasar = document.getElementById('spt-dasar').value;
+            const dana = document.getElementById('spt-sumber-dana').value;
+            const berangkat = document.getElementById('spt-tgl-berangkat').value;
+            const pulang = document.getElementById('spt-tgl-pulang').value;
+            const tujuan = document.getElementById('spt-tujuan').value;
+
+            // Packing Extra Data ke string JSON
+            const complexTujuanJSON = JSON.stringify({
+                tujuan: tujuan, nomor: nomor, dasar: dasar, dana: dana, pegawais: selectedPegawais
+            });
+
+            showLoading();
+            google.script.run.withSuccessHandler(resStr => {
+                hideLoading();
+                let res = JSON.parse(resStr);
+                if (res.status === 'success') {
+                    if (['CUTI', 'IZIN', 'ALPA', 'TL', 'SAKIT'].includes(res.absen)) {
+                        Swal.fire({
+                            title: 'Peringatan Absensi!',
+                            html: `Pegawai utama <b>${utama.nama}</b> berstatus <b>${res.absen}</b>. Tetap Lanjutkan?`,
+                            icon: 'warning', showCancelButton: true, confirmButtonColor: '#FBBF24', confirmButtonText: 'Lanjutkan'
+                        }).then((result) => { if (result.isConfirmed) saveSPT(utama.id_qr, utama.nama + (selectedPegawais.length > 1 ? " dkk" : ""), complexTujuanJSON, berangkat, pulang); });
+                    } else { saveSPT(utama.id_qr, utama.nama + (selectedPegawais.length > 1 ? " dkk" : ""), complexTujuanJSON, berangkat, pulang); }
+                }
+            }).cekAbsensiReal(utama.id_qr, berangkat);
+        }
+
+        function saveSPT(id_qr, nama, tujuanStr, berangkat, pulang) {
+            showLoading();
+            google.script.run.withSuccessHandler(resStr => {
+                hideLoading();
+                let res = JSON.parse(resStr);
+                if(res.status === 'success') {
+                    dbSppd.push(res.data);
+                    Swal.fire('Berhasil!', 'SPT dan SPPD berhasil diterbitkan.', 'success');
+                    document.getElementById('form-spt').reset();
+                    document.getElementById('spt-nomor').value = generateNomorSPT();
+                    initDashboard();
+                }
+            }).simpanSPPDReal({ id_qr: id_qr, nama: nama, tujuan: tujuanStr, berangkat: berangkat, pulang: pulang });
+        }
+
+        function renderSppd() {
+            const tbody = document.getElementById('tbody-sppd');
+            tbody.innerHTML = '';
+            dbSppd.forEach(s => {
+                let det = getParsedDetail(s);
+                let textNamas = det.pegawais.map(p=>`<div class="text-xs font-semibold">${p.nama}</div>`).join('');
+                
+                tbody.innerHTML += `
+                    <tr class="hover:bg-gray-50">
+                        <td class="p-3 font-semibold text-primary align-top">${s.id}</td>
+                        <td class="p-3 align-top">${textNamas}</td>
+                        <td class="p-3 align-top"><div class="text-xs text-gray-500 mb-1">No: ${det.nomor}</div>${det.tujuan}</td>
+                        <td class="p-3 text-sm align-top">${formatTanggalIndo(s.berangkat)}<br>s/d<br>${formatTanggalIndo(s.pulang)}</td>
+                        <td class="p-3 text-center align-top space-y-2">
+                            <button onclick="printSPT('${s.id}')" class="w-full bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white px-2 py-1 rounded text-xs font-semibold shadow-sm border border-blue-200 transition"><i class="fas fa-file-alt"></i> Cetak SPT</button>
+                            <button onclick="printSPPD('${s.id}')" class="w-full bg-yellow-50 text-yellow-700 hover:bg-yellow-500 hover:text-white px-2 py-1 rounded text-xs font-semibold shadow-sm border border-yellow-300 transition"><i class="fas fa-plane"></i> Cetak SPPD</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        // --- PRINT KOP ---
+        const kopSuratHtml = `
+            <div style="text-align: center; border-bottom: 3px solid black; padding-bottom: 5px; margin-bottom: 25px;">
+                <h3 style="margin: 0; font-size: 16px;">PEMERINTAH KABUPATEN SINTANG</h3>
+                <h2 style="margin: 0; font-size: 20px; font-weight: bold;">DINAS KESEHATAN</h2>
+                <h3 style="margin: 0; font-size: 16px; font-weight: bold;">UPTD PUSKESMAS TANJUNG PURI</h3>
+                <p style="margin: 0; font-size: 12px;">JL. Diponegoro Kelurahan Alai Kecamatan Sintang<br>Email: pkmtpsintang@gmail.com Telp. (0565) 21550 Hotline SMS 081256262764 Kode Pos 78611</p>
+            </div>
+        `;
+
+        // --- PRINT SPT ---
+        window.printSPT = function(id) {
+            let s = dbSppd.find(x => x.id === id);
+            let det = getParsedDetail(s);
+            let pRows = det.pegawais.map((p, i) => `
+                <tr><td style="width: 30px; vertical-align: top;">${i+1}.</td><td style="width: 150px;">Nama<br>Pangkat/Gol.<br>Jabatan</td><td>: <b>${p.nama}</b><br>: ${p.pangkat || '-'}<br>: ${p.jabatan || '-'}</td></tr>
+                <tr><td colspan="3"><hr style="border:0.5px dashed #ccc; margin:5px 0;"></td></tr>
+            `).join('');
+
+            let html = `
+                <html><head><title>Cetak SPT - ${id}</title><style>body { font-family: 'Times New Roman', serif; padding: 40px; font-size: 15px; line-height: 1.4;} table { border-collapse: collapse; width: 100%; }</style></head><body>
+                    ${kopSuratHtml}
+                    <div style="text-align: center; font-weight: bold; text-decoration: underline; font-size: 18px; margin-bottom: 5px;">SURAT PERINTAH TUGAS</div>
+                    <div style="text-align: center; margin-bottom: 30px;">NOMOR: ${det.nomor}</div>
+                    <table>
+                        <tr><td style="width: 180px; vertical-align: top;">Dasar / Pertimbangan</td><td style="vertical-align: top; width: 15px;">:</td><td style="text-align: justify;">${det.dasar}</td></tr>
+                    </table>
+                    <div style="text-align: center; font-weight: bold; margin: 30px 0;">MEMERINTAHKAN</div>
+                    <table>
+                        <tr><td style="width: 180px; vertical-align: top;">Kepada</td><td style="vertical-align: top; width: 15px;">:</td>
+                            <td><table>${pRows}</table></td>
+                        </tr>
+                        <tr><td style="vertical-align: top; padding-top: 10px;">Untuk</td><td style="vertical-align: top; padding-top: 10px;">:</td><td style="text-align: justify; padding-top: 10px;">${det.tujuan}</td></tr>
+                        <tr><td>Tanggal Berangkat</td><td>:</td><td>${formatTanggalIndo(s.berangkat)}</td></tr>
+                        <tr><td>Tanggal Kembali</td><td>:</td><td>${formatTanggalIndo(s.pulang)}</td></tr>
+                        <tr><td>Sumber Dana</td><td>:</td><td>${det.dana}</td></tr>
+                    </table>
+                    <div style="width: 350px; float: right; margin-top: 40px;">
+                        Dikeluarkan di : Sintang<br>Pada tanggal : ${formatTanggalIndo(s.berangkat)}<br><br>
+                        <b>Kepala UPTD Puskesmas Tanjung Puri</b><br><br><br><br><br>
+                        <b><u>dr. ANDAR JIMMY PINTABAR, M.A.P, M.H.Kes</u></b><br>PEMBINA<br>NIP. 19861029 201402 1 002
+                    </div>
+                    <script>window.onload = function() { window.print(); }<\/script>
+                </body></html>`;
+            let w = window.open('','_blank'); w.document.write(html); w.document.close();
+        }
+
+        // --- PRINT SPPD ---
+        window.printSPPD = function(id) {
+            let s = dbSppd.find(x => x.id === id);
+            let det = getParsedDetail(s);
+            
+            // Hitung Lama Perjalanan Hari
+            let d1 = new Date(s.berangkat); let d2 = new Date(s.pulang);
+            let diffHari = Math.ceil((d2 - d1) / (1000 * 60 * 60 * 24)) + 1;
+
+            // Generate per orang
+            let pagesHtml = det.pegawais.map((p, index) => {
+                return `
+                <div style="page-break-after: ${index === det.pegawais.length - 1 ? 'auto' : 'always'};">
+                    ${kopSuratHtml}
+                    <div style="text-align: center; font-weight: bold; text-decoration: underline; font-size: 16px; margin-bottom: 20px;">SURAT PERJALANAN DINAS</div>
+                    <table style="width:100%; border-collapse: collapse; font-size:14px;" border="1" cellpadding="6">
+                        <tr><td style="width: 30px; text-align: center;">1</td><td style="width: 250px;">Pejabat yang berwenang memberikan perintah</td><td>Kepala UPTD Puskesmas Tanjung Puri</td></tr>
+                        <tr><td style="text-align: center;">2</td><td>Dasar dan Maksud Perjalanan Dinas</td><td>${det.dasar}</td></tr>
+                        <tr><td style="text-align: center; vertical-align: top;">3</td><td>Pegawai yang melaksanakan Perjalanan Dinas<br>a. NAMA/NIP<br>b. PANGKAT dan GOLONGAN<br>c. JABATAN</td><td><br>a. <b>${p.nama}</b> / ${p.nip || '-'}<br>b. ${p.pangkat || '-'}<br>c. ${p.jabatan || '-'}</td></tr>
+                        <tr><td style="text-align: center;">4</td><td>Tempat Tujuan Perjalanan Dinas</td><td>${det.tujuan}</td></tr>
+                        <tr><td style="text-align: center;">5</td><td>Lamanya Perjalanan Dinas</td><td>${diffHari} Hari</td></tr>
+                        <tr><td style="text-align: center; vertical-align: top;">6</td><td>Pembebanan Anggaran :<br>a. SKPD<br>b. Kode Rekening</td><td><br>a. ${det.dana}<br>b. -</td></tr>
+                        <tr><td style="text-align: center;">7</td><td>Tanggal Berangkat</td><td>${formatTanggalIndo(s.berangkat)}</td></tr>
+                        <tr>
+                            <td style="text-align: center; vertical-align: top;">8</td>
+                            <td style="vertical-align: top;">Tiba di: ${det.tujuan}<br>Tanggal: ${formatTanggalIndo(s.berangkat)}</td>
+                            <td style="vertical-align: top;">Berangkat Dari: Puskesmas Tanjung Puri<br>Ke: ${det.tujuan}<br>Tanggal: ${formatTanggalIndo(s.berangkat)}</td>
+                        </tr>
+                        <tr>
+                            <td style="text-align: center; vertical-align: top;">9</td>
+                            <td style="vertical-align: top;">Tiba di: Sintang<br>Tanggal: ${formatTanggalIndo(s.pulang)}</td>
+                            <td style="vertical-align: top;">Berangkat Dari: ${det.tujuan}<br>Ke: Sintang<br>Tanggal: ${formatTanggalIndo(s.pulang)}</td>
+                        </tr>
+                        <tr><td style="text-align: center;">10</td><td>Harus Tiba di Sintang pada Tanggal</td><td>${formatTanggalIndo(s.pulang)}</td></tr>
+                        <tr><td style="text-align: center;">11</td><td>Keterangan Lain-Lain</td><td>-</td></tr>
+                        <tr><td style="text-align: center;">12</td><td colspan="2">Telah diperiksa dengan keterangan bahwa perjalanan dinas tersebut atas perintahnya dan semata-mata untuk kepentingan dinas dalam waktu yang sesingkat-singkatnya</td></tr>
+                    </table>
+                    <div style="width: 300px; float: right; text-align: center; margin-top: 30px; font-size: 14px;">
+                        Ditetapkan di : Sintang<br>Pada Tanggal : ${formatTanggalIndo(s.berangkat)}<br>
+                        <b>Kepala UPTD Puskesmas Tanjung Puri</b><br><br><br><br><br>
+                        <b><u>dr. ANDAR JIMMY PINTABAR, M.A.P, M.H.Kes</u></b><br>NIP. 19861029 201402 1 002
+                    </div>
+                    <div style="clear:both;"></div>
+                </div>`;
+            }).join('');
+
+            let html = `<html><head><title>Cetak SPPD - ${id}</title><style>body { font-family: 'Times New Roman', serif; padding: 20px; }</style></head><body>${pagesHtml}<script>window.onload = function() { window.print(); }<\/script></body></html>`;
+            let w = window.open('','_blank'); w.document.write(html); w.document.close();
+        }
+
+        // --- MODULE LAPORAN ---
+        function handleLaporan(e) {
+            e.preventDefault();
+            const id_sppd = document.getElementById('lap-sppd').value;
+            const hasil = document.getElementById('lap-hasil').value;
+            const kesimpulan = document.getElementById('lap-kesimpulan').value;
+            const saran = document.getElementById('lap-saran').value;
+
+            showLoading();
+            google.script.run.withSuccessHandler(resStr => {
+                hideLoading();
+                let res = JSON.parse(resStr);
+                if(res.status === 'success') {
+                    let sp = dbSppd.find(s => s.id === id_sppd);
+                    if(sp) sp.status = "Selesai";
+                    // Simpan local laporan utk print
+                    dbLaporan[id_sppd] = { hasil: hasil, kesimpulan: kesimpulan, saran: saran };
+
+                    Swal.fire({
+                        title: 'Tersimpan!', text: 'Laporan telah masuk database.', icon: 'success', showCancelButton: true, confirmButtonText: 'Cetak Dokumen Laporan', cancelButtonText: 'Tutup'
+                    }).then((r) => { if(r.isConfirmed) printLaporan(id_sppd); });
+                    document.getElementById('form-laporan').reset();
+                    initDashboard();
+                }
+            }).simpanLaporanReal({ id_sppd: id_sppd, hasil: hasil });
+        }
+
+        window.printLaporan = function(id) {
+            let s = dbSppd.find(x => x.id === id);
+            let det = getParsedDetail(s);
+            let lap = dbLaporan[id] || { hasil: 'Telah dilaksanakan', kesimpulan: 'Baik', saran: 'Lanjutkan' };
+            
+            let listPegawai = det.pegawais.map((p,i) => `${i+1}. ${p.nama}<br>&nbsp;&nbsp;&nbsp;NIP. ${p.nip||'-'}`).join('<br>');
+            let ttdBox = det.pegawais.map((p,i) => `
+                <div style="margin-bottom:30px; display:flex;">
+                   <div style="width:30px;">${i+1}.</div>
+                   <div style="width:200px;">${p.nama}<br>NIP. ${p.nip||'-'}</div>
+                   <div style="width:150px;">(........................)</div>
+                </div>
+            `).join('');
+
+            let html = `<html><head><title>Laporan - ${id}</title><style>body { font-family: 'Times New Roman', serif; padding: 40px; font-size: 15px; line-height: 1.5;}</style></head><body>
+                <h3 style="text-align: center; text-decoration: underline; margin-bottom: 30px;">LAPORAN PERJALANAN DINAS</h3>
+                <table style="width:100%; border:none; margin-bottom:20px;">
+                    <tr><td style="width: 150px; vertical-align:top;">Disampaikan kepada</td><td style="width: 20px; vertical-align:top;">:</td><td>Kepala UPTD Puskesmas Tanjung Puri</td></tr>
+                    <tr><td style="vertical-align:top;">Oleh</td><td style="vertical-align:top;">:</td><td>${listPegawai}</td></tr>
+                    <tr><td style="vertical-align:top;">Perihal</td><td style="vertical-align:top;">:</td><td>Laporan Perjalanan Dinas Dalam Rangka:<br>${det.tujuan}</td></tr>
+                </table>
+                <hr>
+                <div style="margin-top: 20px;">
+                    <b>A. Dasar Perjalanan Dinas</b><br>: Surat Perintah Tugas Nomor: ${det.nomor} Tanggal ${formatTanggalIndo(s.berangkat)}<br><br>
+                    <b>B. Tujuan Perjalanan Dinas</b><br>: ${det.tujuan} pada tanggal ${formatTanggalIndo(s.berangkat)}<br><br>
+                    <b>C. Hasil perjalanan</b><br>: <div style="white-space: pre-wrap; padding-left:10px;">${lap.hasil}</div><br>
+                    <b>D. Kesimpulan</b><br>: <div style="white-space: pre-wrap; padding-left:10px;">${lap.kesimpulan}</div><br>
+                    <b>E. Saran</b><br>: <div style="white-space: pre-wrap; padding-left:10px;">${lap.saran}</div><br>
+                    <b>F. Penutup</b><br>: Demikian laporan perjalanan dinas ini dibuat untuk dipergunakan sebagaimana mestinya.
+                </div>
+                <div style="margin-top:40px;">
+                    Sintang, ${formatTanggalIndo(s.pulang)}<br>Yang Membuat Laporan:<br><br>
+                    ${ttdBox}
+                </div>
+                <script>window.onload=function(){window.print();}<\/script>
+            </body></html>`;
+            let w = window.open('','_blank'); w.document.write(html); w.document.close();
+        }
+
+        // --- MODULE KWITANSI ---
+        function kalkulasiKwitansi() {
+            let t1 = parseInt(document.getElementById('kwi-penginapan').value) || 0;
+            let t2 = parseInt(document.getElementById('kwi-makan').value) || 0;
+            let t3 = parseInt(document.getElementById('kwi-saku').value) || 0;
+            let t4 = parseInt(document.getElementById('kwi-angkutan').value) || 0;
+            let t5 = parseInt(document.getElementById('kwi-transport').value) || 0;
+            let total = t1 + t2 + t3 + t4 + t5;
+            
+            document.getElementById('kwi-total-value').value = total;
+            document.getElementById('kwi-total-display').innerText = "Rp " + total.toLocaleString('id-ID');
+            document.getElementById('kwi-terbilang').innerText = terbilang(total).toUpperCase() + " RUPIAH";
+        }
+
+        function handleKwitansi(e) {
+            e.preventDefault();
+            const id_sppd = document.getElementById('kwi-sppd').value;
+            const total = document.getElementById('kwi-total-value').value;
+            
+            let dataForm = {
+                kode: document.getElementById('kwi-kode').value,
+                rek: document.getElementById('kwi-rek').value,
+                bendahara: document.getElementById('kwi-bendahara').value,
+                kpa: document.getElementById('kwi-kpa').value,
+                pptk: document.getElementById('kwi-pptk').value,
+                rincian: [
+                    document.getElementById('kwi-penginapan').value,
+                    document.getElementById('kwi-makan').value,
+                    document.getElementById('kwi-saku').value,
+                    document.getElementById('kwi-angkutan').value,
+                    document.getElementById('kwi-transport').value
+                ],
+                terbilang: document.getElementById('kwi-terbilang').innerText
+            };
+
+            showLoading();
+            google.script.run.withSuccessHandler(resStr => {
+                hideLoading();
+                Swal.fire({
+                    title: 'Kwitansi Tersimpan', text: 'Data telah disimpan ke database.', icon: 'success', showCancelButton: true, confirmButtonText: 'Cetak Kwitansi', cancelButtonText: 'Tutup'
+                }).then((r) => {
+                    if(r.isConfirmed) printKwitansi(id_sppd, total, dataForm);
+                    document.getElementById('form-kwitansi').reset();
+                    kalkulasiKwitansi();
+                });
+            }).simpanKwitansiReal({ id_sppd: id_sppd, transport: dataForm.rincian[4], penginapan: dataForm.rincian[0], uang_harian: parseInt(dataForm.rincian[1])+parseInt(dataForm.rincian[2]), total: total });
+        }
+
+        window.printKwitansi = function(id_sppd, total, fData) {
+            let s = dbSppd.find(x => x.id === id_sppd);
+            let det = getParsedDetail(s);
+            
+            // Hitung Hari
+            let d1 = new Date(s.berangkat); let d2 = new Date(s.pulang);
+            let diffDays = Math.ceil((d2 - d1) / (1000 * 60 * 60 * 24)) + 1;
+            let diffMalam = diffDays > 1 ? diffDays - 1 : 0;
+
+            let pagesHtml = det.pegawais.map((p, index) => {
+                // Asumsi biaya dibagi rata per orang untuk display cetak kwitansi
+                let bgT = parseInt(total)/det.pegawais.length;
+                let terbilangOrang = terbilang(bgT).toUpperCase() + " RUPIAH";
+
+                return `
+                <div style="page-break-after: ${index === det.pegawais.length - 1 ? 'auto' : 'always'}; border: 2px solid #000; padding: 20px; max-width: 800px; margin: auto; font-family: Arial, sans-serif;">
+                    <div style="font-size: 12px; float:right;">NO Bukti:<br>Lunas Bayar Tgl:</div>
+                    <table style="width: 100%; margin-bottom: 20px; font-size:12px;">
+                        <tr><td width="100">Kode Kegiatan</td><td>: ${fData.kode}</td></tr>
+                        <tr><td>Kode Rekening</td><td>: ${fData.rek}</td></tr>
+                    </table>
+                    <div style="font-size: 20px; font-weight: bold; text-align: center; text-decoration: underline; margin-bottom: 20px;">TANDA TERIMA PEMBAYARAN</div>
+                    
+                    <table style="width: 100%; font-size: 14px; margin-bottom: 20px;">
+                        <tr><td width="200">Bendahara Pengeluaran</td><td>: UPTD Puskesmas Tanjung Puri</td></tr>
+                        <tr><td>Sudah Terima Dari</td><td>: Kuasa Pengguna Anggaran UPTD Puskesmas Tanjung Puri</td></tr>
+                        <tr><td>Banyaknya Uang</td><td style="font-weight:bold;">: ${terbilangOrang}</td></tr>
+                        <tr><td style="vertical-align:top;">Untuk Pembayaran</td><td>: Biaya Perjalanan Dinas an. ${p.nama} NIP. ${p.nip||'-'} dalam rangka ${det.tujuan} pada tanggal ${formatTanggalIndo(s.berangkat)}</td></tr>
+                    </table>
+                    
+                    <div style="font-size:12px; font-weight:bold; margin-bottom:5px;">Rincian Perjalanan Dinas:</div>
+                    <table style="width: 100%; border-collapse:collapse; font-size:12px;" border="1" cellpadding="5">
+                        <tr style="background:#f0f0f0;"><th>NO</th><th>PERINCIAN BIAYA</th><th>JUMLAH (Rp.)</th></tr>
+                        <tr><td>1</td><td>Uang Penginapan (${diffMalam} malam)</td><td align="right">${(fData.rincian[0]/det.pegawais.length).toLocaleString('id-ID')}</td></tr>
+                        <tr><td>2</td><td>Uang Harian / Saku / Makan (${diffDays} hari)</td><td align="right">${((parseInt(fData.rincian[1])+parseInt(fData.rincian[2]))/det.pegawais.length).toLocaleString('id-ID')}</td></tr>
+                        <tr><td>3</td><td>Angkutan Setempat</td><td align="right">${(fData.rincian[3]/det.pegawais.length).toLocaleString('id-ID')}</td></tr>
+                        <tr><td>4</td><td>Biaya Transport</td><td align="right">${(fData.rincian[4]/det.pegawais.length).toLocaleString('id-ID')}</td></tr>
+                        <tr><th colspan="2" align="right">JUMLAH TOTAL</th><th align="right">Rp ${bgT.toLocaleString('id-ID')}</th></tr>
+                    </table>
+
+                    <table style="width: 100%; text-align: center; margin-top: 30px; font-size: 13px;">
+                        <tr>
+                            <td width="33%">Telah diperiksa oleh<br>PPTK<br><br><br><br><b><u>${fData.pptk}</u></b></td>
+                            <td width="33%">Mengetahui/Setuju Dibayar<br>Kuasa Pengguna Anggaran<br><br><br><br><b><u>${fData.kpa}</u></b></td>
+                            <td width="33%">Sintang, ${formatTanggalIndo(s.pulang)}<br>Yang Menerima<br><br><br><br><b><u>${p.nama}</u></b><br>NIP. ${p.nip||'-'}</td>
+                        </tr>
+                        <tr>
+                            <td colspan="3" style="text-align:left; padding-top:20px;">
+                                Lunas Dibayar Tgl: .................................<br>Bendahara Pengeluaran<br><br><br><br><b><u>${fData.bendahara}</u></b>
+                            </td>
+                        </tr>
+                    </table>
+                </div>`;
+            }).join('');
+
+            let html = `<html><head><title>Kwitansi - ${id_sppd}</title></head><body>${pagesHtml}<script>window.onload=function(){window.print();}<\/script></body></html>`;
+            let w = window.open('','_blank'); w.document.write(html); w.document.close();
+        }
+
+        function renderMonitoring() {
+            const tbody = document.getElementById('tbody-monitoring');
+            const filter = document.getElementById('mon-status').value;
+            tbody.innerHTML = '';
+            let filtered = dbSppd.filter(s => filter === 'ALL' || s.status === filter);
+            filtered.forEach(s => {
+                let det = getParsedDetail(s);
+                let badgePd = s.status === 'Selesai' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700';
+                tbody.innerHTML += `<tr class="hover:bg-gray-50"><td class="p-3 font-medium text-xs">${s.id}</td><td class="p-3 text-xs">${det.pegawais.map(p=>p.nama).join(', ')}</td><td class="p-3 text-sm">${det.tujuan}</td><td class="p-3 text-sm">${formatTanggalIndo(s.berangkat)}</td><td class="p-3 text-sm">${formatTanggalIndo(s.pulang)}</td><td class="p-3"><span class="px-2 py-1 rounded text-xs font-bold ${badgePd}">${s.status}</span></td></tr>`;
+            });
+        }
+    </script>
 </body>
 </html>
