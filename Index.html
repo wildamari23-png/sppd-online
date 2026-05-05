@@ -203,7 +203,9 @@
                                 </div>
                                 
                                 <div class="col-span-1 md:col-span-2"><label class="block text-sm font-medium mb-1">Dasar / Pertimbangan</label><textarea id="spt-dasar" required rows="2" class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary" placeholder="Cth: Perlunya Kegiatan Luar Gedung Untuk Menunjang Pelayanan..."></textarea></div>
-                                <div class="col-span-1 md:col-span-2"><label class="block text-sm font-medium mb-1">Tujuan / Maksud Perjalanan Dinas</label><input type="text" id="spt-tujuan" required class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary" placeholder="Cth: Asesment Tingkat Keterampilan Kader..."></div>
+                                <div class="col-span-1 md:col-span-2"><label class="block text-sm font-medium mb-1">Maksud Perjalanan Dinas</label><input type="text" id="spt-tujuan" required class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary" placeholder="Cth: Asesment Tingkat Keterampilan Kader..."></div>
+                                <div><label class="block text-sm font-medium mb-1">Tempat Tujuan Perjalanan Dinas</label><input type="text" id="spt-tempat-tujuan" required class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary" placeholder="Cth: Desa Sungai Ana"></div>
+                                <div><label class="block text-sm font-medium mb-1">Kode Rekening Kegiatan</label><input type="text" id="spt-kode-rekening" required value="1.02.02.2.02.15.0007" class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary" placeholder="Cth: 1.02.02.2.02.15.0007"></div>
                                 
                                 <div><label class="block text-sm font-medium mb-1">Tgl Berangkat</label><input type="date" id="spt-tgl-berangkat" required class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary"></div>
                                 <div><label class="block text-sm font-medium mb-1">Tgl Pulang</label><input type="date" id="spt-tgl-pulang" required class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary"></div>
@@ -413,6 +415,14 @@
             const randomSeq = Math.floor(Math.random() * 900) + 100; // Generate no acak 3 digit sebagai placeholder sementara
             return `400.7/${randomSeq}/Tj-Puri/${month}/${year}`;
         }
+        function generateNomorSPD(index = 1) {
+            const d = new Date();
+            const romawi = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII"];
+            const month = romawi[d.getMonth()];
+            const year = d.getFullYear();
+            const seq = String(Math.floor(Math.random() * 9000) + 1000 + index).slice(-4);
+            return `${seq}/SPD/PKM-TP/${month}/${year}`;
+        }
 
         // FUNGSI ADD NEW DROPDOWN (SUMBER DANA DLL)
         window.handleDropdownBaru = function(sel, hiddenId) {
@@ -459,7 +469,7 @@
         }
 
         function getParsedDetail(s) {
-            let detail = { tujuan: s.tujuan, nomor: '-', dasar: '-', dana: '-', pegawais: [{id_qr: s.id_qr, nama: s.nama}] };
+            let detail = { tujuan: s.tujuan, tempatTujuan: s.tujuan, nomor: '-', dasar: '-', dana: '-', kodeRekening: '1.02.02.2.02.15.0007', pegawais: [{id_qr: s.id_qr, nama: s.nama, nomor_spd: s.id}] };
             try { let parsed = JSON.parse(s.tujuan); if (parsed && parsed.tujuan) detail = parsed; } catch(e) {}
             return detail;
         }
@@ -615,13 +625,16 @@
             const nomor = document.getElementById('spt-nomor').value;
             const dasar = document.getElementById('spt-dasar').value;
             const dana = document.getElementById('spt-sumber-dana').value;
+            const kodeRekening = document.getElementById('spt-kode-rekening').value;
             const berangkat = document.getElementById('spt-tgl-berangkat').value;
             const pulang = document.getElementById('spt-tgl-pulang').value;
             const tujuan = document.getElementById('spt-tujuan').value;
+            const tempatTujuan = document.getElementById('spt-tempat-tujuan').value;
+            const pegawaisWithNomor = selectedPegawais.map((p, i) => ({ ...p, nomor_spd: generateNomorSPD(i + 1) }));
 
             // Packing Extra Data ke string JSON
             const complexTujuanJSON = JSON.stringify({
-                tujuan: tujuan, nomor: nomor, dasar: dasar, dana: dana, pegawais: selectedPegawais
+                tujuan: tujuan, tempatTujuan: tempatTujuan, nomor: nomor, dasar: dasar, dana: dana, kodeRekening: kodeRekening, pegawais: pegawaisWithNomor
             });
 
             showLoading();
@@ -731,15 +744,13 @@
             let det = getParsedDetail(s);
             let d1 = new Date(s.berangkat); let d2 = new Date(s.pulang);
             let diffHari = Math.ceil((d2 - d1) / (1000 * 60 * 60 * 24)) + 1;
-            const barisPegawai = Array.from({ length: 10 }, (_, i) => det.pegawais[i] || {});
-            const rowHtml = barisPegawai.map((p, i) => `
-                <tr><td style="padding:6px;">${String.fromCharCode(97+i)}.</td><td style="padding:6px;">${p.nama || '#N/A'}${p.nip ? ' / ' + p.nip : ''}</td><td style="padding:6px;">${p.pangkat || '#N/A'}</td><td style="padding:6px;">${p.jabatan || '#N/A'}</td><td style="padding:6px;">${s.id || '0'}</td></tr>
+            const rowHtml = det.pegawais.map((p, i) => `
+                <tr><td style="padding:6px;">${String.fromCharCode(97+i)}.</td><td style="padding:6px;">${p.nama}${p.nip ? ' / ' + p.nip : ''}</td><td style="padding:6px;">${p.pangkat || '-'}</td><td style="padding:6px;">${p.jabatan || '-'}</td><td style="padding:6px;">${p.nomor_spd || generateNomorSPD(i + 1)}</td></tr>
             `).join('');
             let html = `<html><head><title>Cetak SPPD - ${id}</title><style>
                 body { font-family: Arial, sans-serif; padding: 20px; font-size: 13px; }
                 table { width:100%; border-collapse:collapse; } td,th { border:1px solid #111; vertical-align: top; }
             </style></head><body>${kopSuratHtml}
-            <div style="text-align:center; font-size:40px; margin-top:-100px;">&nbsp;</div>
             <h2 style="text-align:center; text-decoration:underline; margin:8px 0;">SURAT PERJALANAN DINAS</h2>
             <table>
             <tr><td style="width:30px; text-align:center;">1</td><td style="width:32%;">Pejabat yang berwenang memberikan perintah</td><td colspan="3">Kepala UPTD Puskesmas Tanjung Puri</td></tr>
@@ -747,11 +758,11 @@
             <tr><td style="text-align:center;">3</td><td colspan="4">Pegawai yang melaksanakan Perjalanan Dinas</td></tr>
             <tr><th style="border-left:none;border-right:none;"></th><th>NAMA / NIP</th><th>PANGKAT dan GOLONGAN</th><th>JABATAN</th><th>NOMOR SPD</th></tr>
             ${rowHtml}
-            <tr><td style="text-align:center;">4</td><td>Tempat Tujuan Perjalanan Dinas</td><td colspan="3">${det.tujuan}</td></tr>
+            <tr><td style="text-align:center;">4</td><td>Tempat Tujuan Perjalanan Dinas</td><td colspan="3">${det.tempatTujuan || det.tujuan}</td></tr>
             <tr><td style="text-align:center;">5</td><td>Lamanya Perjalanan Dinas</td><td colspan="3">${diffHari} hari</td></tr>
-            <tr><td style="text-align:center;">6</td><td>Pembebanan Anggaran :<br>a. SKPD<br>b. Kode Rekening</td><td colspan="3">a. ${det.dana}<br>b. 1.02.02.2.02.15.0007</td></tr>
+            <tr><td style="text-align:center;">6</td><td>Pembebanan Anggaran :<br>a. SKPD<br>b. Kode Rekening</td><td colspan="3">a. ${det.dana}<br>b. ${det.kodeRekening || '-'}</td></tr>
             <tr><td style="text-align:center;">7</td><td>Tanggal Berangkat</td><td colspan="3">${formatTanggalIndo(s.berangkat)}</td></tr>
-            <tr><td style="text-align:center;">8</td><td>Tiba di : ${det.tujuan}<br>Tanggal : ${formatTanggalIndo(s.berangkat)}</td><td colspan="3">Berangkat Dari : ${det.tujuan}<br>Ke : Kupan Jaya<br>Tanggal : ${formatTanggalIndo(s.berangkat)}</td></tr>
+            <tr><td style="text-align:center;">8</td><td>Tiba di : ${det.tempatTujuan || det.tujuan}<br>Tanggal : ${formatTanggalIndo(s.berangkat)}</td><td colspan="3">Berangkat Dari : ${det.tempatTujuan || det.tujuan}<br>Ke : Kupan Jaya<br>Tanggal : ${formatTanggalIndo(s.berangkat)}</td></tr>
             <tr><td style="text-align:center;">9</td><td>Tiba di :<br>Tanggal :</td><td colspan="3">Berangkat Dari :<br>Ke :<br>Tanggal :</td></tr>
             <tr><td style="text-align:center;">10</td><td>Harus Tiba di Kupan Jaya pada Tanggal</td><td colspan="3">${formatTanggalIndo(s.pulang)}</td></tr>
             <tr><td style="text-align:center;">11</td><td>Keterangan Lain-Lain</td><td colspan="3">-</td></tr>
